@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<body>
+  <script src="//d3js.org/d3.v5.min.js"></script>
+  <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
+  <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
+  <div id="graph" style="text-align: center"></div>
+  <script>
+    digraphs = [
+      {
+        digraph:
+          'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";}',
+        matrix_index: [E, int],
+      },
+      {
+        digraph:
+          'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";}',
+        matrix_index: [F, int],
+      },
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";}',
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";}',
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";}',
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8c40" [label="F"];    "0x1cc199a8c10" [label="T1"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";    "0x1cc199a8dc0" -> "0x1cc199a8c40";    "0x1cc199a8dc0" -> "0x1cc199a8c10";}',
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8c40" [label="F"];    "0x1cc199a8b80" [label="<int:2>"];    "0x1cc199a8c10" [label="T1"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";    "0x1cc199a8dc0" -> "0x1cc199a8c40";    "0x1cc199a8dc0" -> "0x1cc199a8c10";    "0x1cc199a8c40" -> "0x1cc199a8b80";}',
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8c40" [label="F"];    "0x1cc199a8b80" [label="<int:2>"];    "0x1cc199a8c10" [label="T1"];    "0x1cc199a8af0" [label="e"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";    "0x1cc199a8dc0" -> "0x1cc199a8c40";    "0x1cc199a8dc0" -> "0x1cc199a8c10";    "0x1cc199a8c40" -> "0x1cc199a8b80";    "0x1cc199a8c10" -> "0x1cc199a8af0";}',
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8c40" [label="F"];    "0x1cc199a8b80" [label="<int:2>"];    "0x1cc199a8c10" [label="T1"];    "0x1cc199a8af0" [label="e"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8ac0" [label="e"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";    "0x1cc199a8dc0" -> "0x1cc199a8c40";    "0x1cc199a8dc0" -> "0x1cc199a8c10";    "0x1cc199a8c40" -> "0x1cc199a8b80";    "0x1cc199a8c10" -> "0x1cc199a8af0";    "0x1cc199a8cd0" -> "0x1cc199a8ac0";}',
+    ];
+
+    // digraphs.forEach(digraph => {
+    //   d3.select('#graph').graphviz().renderDot(digraph);
+    // });
+    d3.select('#graph').graphviz().renderDot(digraphs[7]);
+  </script>
+</body>
