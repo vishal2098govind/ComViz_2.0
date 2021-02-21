@@ -55,6 +55,7 @@ class Parser:
         self.token_index = -1
         self.current_token = None
         self.trace = []
+        self.ast_trace = []
         self.advance_token()
 
     def advance_token(self):
@@ -88,8 +89,11 @@ class Parser:
         # L -> int | float
         if token.type in (TT_INT, TT_FLOAT):
             terminal_node = AnyNode(id='number' + str(len(self.trace)), name=token, parent=caller)
+
             self.trace.append(terminal_node)
             visualize_parse_tree(self.trace)
+
+            self.ast_trace.append(NumberNode(number_token=token))
 
             parse_result.register(self.advance_token())
             return parse_result.success(node=NumberNode(number_token=token))
@@ -100,6 +104,9 @@ class Parser:
             self.trace.append(terminal_id_node)
 
             parse_result.register(self.advance_token())
+
+            self.ast_trace.append(VariableAccessNode(var_name_token=token))
+
             return parse_result.success(node=VariableAccessNode(var_name_token=token))
 
         # L -> ( E )
@@ -165,6 +172,9 @@ class Parser:
                 if parse_result.error:
                     return parse_result
 
+                self.ast_trace.append(BinaryOperationNode(left_node=a_node,
+                                                          operator_token=power_token, right_node=p_node))
+
                 return parse_result.success(node=BinaryOperationNode(left_node=a_node, operator_token=power_token,
                                                                      right_node=p_node))
 
@@ -212,6 +222,8 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
+            self.ast_trace.append(UnaryOperationNode(operator_token=operator_token, right_node=p_node))
+
             return parse_result.success(node=UnaryOperationNode(operator_token=operator_token, right_node=p_node))
 
         # F -> P
@@ -257,6 +269,9 @@ class Parser:
 
             if parse_result.error:
                 return parse_result
+
+            self.ast_trace.append(BinaryOperationNode(left_node=left_child,
+                                                      operator_token=operator_token,right_node=f_node))
 
             t1_node = parse_result.register(
                 parse_result=self.term_1(left_child=BinaryOperationNode(left_node=left_child,
@@ -346,6 +361,12 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
+            self.ast_trace.append(BinaryOperationNode(
+                left_node=left_child,
+                operator_token=operator_token,
+                right_node=right_child
+            ))
+
             e1_node = parse_result.register(parse_result=self.arith_expression_1(left_child=BinaryOperationNode(
                 left_node=left_child,
                 operator_token=operator_token,
@@ -427,6 +448,9 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
+            self.ast_trace.append(BinaryOperationNode(
+                left_node=left_child, operator_token=token, right_node=a_node))
+
             c1_node = parse_result.register(parse_result=self.comparison_expression_1(left_child=BinaryOperationNode(
                 left_node=left_child, operator_token=token, right_node=a_node), caller=non_terminal_c1_node))
             if parse_result.error:
@@ -468,6 +492,8 @@ class Parser:
             c_node = parse_result.register(parse_result=self.comparison_expression(caller=non_terminal_c_node))
             if parse_result.error:
                 return parse_result
+
+            self.ast_trace.append(UnaryOperationNode(operator_token=token, right_node=c_node))
 
             return parse_result.success(node=UnaryOperationNode(operator_token=token, right_node=c_node))
 
@@ -519,6 +545,9 @@ class Parser:
             c_node = parse_result.register(parse_result=self.comparison_expression(caller=non_terminal_c_node))
             if parse_result.error:
                 return parse_result
+
+            self.ast_trace.append(BinaryOperationNode(left_node=left_child, operator_token=token,
+                                               right_node=c_node))
 
             e1_node = parse_result.register(parse_result=self.expression_1(
                 left_child=BinaryOperationNode(left_node=left_child, operator_token=token,
@@ -594,6 +623,9 @@ class Parser:
                     e_node = parse_result.register(parse_result=self.expression(caller=non_terminal_e_node))
                     if parse_result.error:
                         return
+
+                    self.ast_trace.append(VariableAssignNode(variable_name_token=variable_name_token,
+                                                                        variable_value=e_node))
 
                     return parse_result.success(node=VariableAssignNode(variable_name_token=variable_name_token,
                                                                         variable_value=e_node))

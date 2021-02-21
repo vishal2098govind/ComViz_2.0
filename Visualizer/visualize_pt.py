@@ -1,11 +1,10 @@
-from anytree import RenderTree
 from anytree.exporter import UniqueDotExporter
 
-digraphs = []
+pt_digraphs = []
 
 
 def visualize_parse_tree(trace):
-    global digraphs
+    global pt_digraphs
     if trace:
         dgi = ''
         # for pre, fill, node in RenderTree(trace[0]):
@@ -15,4 +14,4 @@ def visualize_parse_tree(trace):
             # print(line)
             dgi += line
         # print(dgi)
-        digraphs.append([dgi])
+        pt_digraphs.append([dgi])

@@ -1,9 +1,10 @@
 from Compiler.run import run
-from Visualizer.visualize_pt import digraphs
+from Visualizer.visualize_ast import ast_digraphs, visualize_ast
+from Visualizer.visualize_pt import pt_digraphs
 
 while True:
     text = input('comviz >')
-    lexer_result, lexer_errors, ast_root, syntax_errors = run(file_name='<stdin>', text=text)
+    lexer_result, lexer_errors, ast_root, syntax_errors, eval_result = run(file_name='<stdin>', text=text)
 
     if lexer_errors:
         print(lexer_errors.as_string())
@@ -16,4 +17,7 @@ while True:
         else:
             # No syntax errors
             print(ast_root)
-            print(digraphs)
+            # print(pt_digraphs)
+            print(eval_result)
+            # visualize_ast(ast_root)
+            # print(ast_digraphs)

@@ -377,6 +377,7 @@
     //     ],
     // ];
 
+    // PT Digraph
     var dots = [
       ['digraph tree {    "0x1bc777fbbb0" [label="E"];}'],
       [
@@ -435,6 +436,20 @@
       ],
       [
         'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e22e0" [label="<int:2>"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e21c0" [label="e"];    "0x1bc778e2040" [label="A1"];    "0x1bc778e2130" [label="e"];    "0x1bc778cce20" [label="C1"];    "0x1bc778e2160" [label="e"];    "0x1bc778ccb80" [label="E1"];    "0x1bc778ccc70" [label="e"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";    "0x1bc778e2220" -> "0x1bc778e22e0";    "0x1bc778e2100" -> "0x1bc778e21c0";    "0x1bc778e2040" -> "0x1bc778e2130";    "0x1bc778cce20" -> "0x1bc778e2160";    "0x1bc778ccb80" -> "0x1bc778ccc70";}',
+      ],
+    ];
+
+    // AST_Digraph
+    var dots = [
+      ['digraph tree {    "0x26232039850" [label="+"];}'],
+      [
+        'digraph tree {    "0x26232039850" [label="+"];    "0x26232825fd0" [label="< int:1 >"];    "0x26232039850" -> "0x26232825fd0";}',
+      ],
+      [
+        'digraph tree {    "0x26232039850" [label="+"];    "0x26232825fd0" [label="< int:1 >"];    "0x26232825f70" [label="< int:2 >"];    "0x26232039850" -> "0x26232825fd0";    "0x26232039850" -> "0x26232825f70";}',
+      ],
+      [
+        'digraph tree {    "0x26232039850" [label="+"];    "0x26232825fd0" [label="< int:1 >"];    "0x26232825f70" [label="< int:2 >"];    "0x26232039850" -> "0x26232825fd0";    "0x26232039850" -> "0x26232825f70";}',
       ],
     ];
   </script>

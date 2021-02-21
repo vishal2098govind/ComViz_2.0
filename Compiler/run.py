@@ -1,4 +1,5 @@
 from Compiler.lexical_analyzer.lexer import Lexer
+from Compiler.semantic_analyzer.evaluate_ast import EvaluateAST
 from Compiler.syntax_analyzer.parser import Parser
 
 
@@ -8,9 +9,15 @@ def run(file_name, text):
 
     # Parser
     if illegal_char_error:
-        return tokens, illegal_char_error, None, None
+        return tokens, illegal_char_error, None, None, None
     parser = Parser(tokens_list=tokens)
     ast = parser.parse()
     ast_root, invalid_syntax_error = ast.node, ast.error
 
-    return tokens, illegal_char_error, ast_root, invalid_syntax_error
+    if invalid_syntax_error:
+        return tokens, None, ast_root, invalid_syntax_error, None
+    print(parser.ast_trace)
+    evaluate_ast = EvaluateAST()
+    eval_result = evaluate_ast.evaluate_node(node=ast_root)
+
+    return tokens, illegal_char_error, ast_root, invalid_syntax_error, eval_result
