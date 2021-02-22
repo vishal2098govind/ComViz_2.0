@@ -1,10 +1,26 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
+<style>
+  .container {
+    display: flex;
+    flex-direction: column;
+  }
+  #graph {
+    background-color: 'yellow';
+  }
+  #graph1 {
+    background-color: 'green';
+  }
+</style>
 <body>
   <script src="//d3js.org/d3.v4.min.js"></script>
   <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
   <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
-  <div id="graph" style="text-align: center"></div>
+  <div class="container">
+    <div id="graph" style="text-align: center"></div>
+    <div id="ast" style="text-align: center"></div>
+  </div>
+
   <script>
     function attributer(datum, index, nodes) {
       var selection = d3.select(this);
@@ -13,14 +29,15 @@
         var height = window.innerHeight;
         var x = 200;
         var y = 10;
-        var scale = 0.75;
+        var scale = 1;
         selection
           .attr('width', width + 'pt')
           .attr('height', height + 'pt')
           .attr(
             'viewBox',
             -x + ' ' + -y + ' ' + width / scale + ' ' + height / scale
-          );
+          )
+          .attr('fill', 'yellow');
         datum.attributes.width = width + 'pt';
         datum.attributes.height = height + 'pt';
         datum.attributes.viewBox =
@@ -29,11 +46,11 @@
     }
 
     function transitionFactory() {
-      return d3.transition('main').ease(d3.easeLinear).delay(10).duration(1000);
+      return d3.transition('main').ease(d3.easeLinear).delay(10).duration(500);
     }
 
-    var dotIndex = 0;
-    var graphviz = d3
+    var dotPTIndex = 0;
+    var pt = d3
       .select('#graph')
       .graphviz()
       .logEvents(true)
@@ -43,413 +60,122 @@
       .attributer(attributer);
 
     function render() {
-      var dotLines = dots[dotIndex % dots.length];
+      var dotLines = both_dots[dotPTIndex % both_dots.length];
       var dot = dotLines.join('');
-      graphviz.renderDot(dot).on('end', function () {
-        dotIndex += 1;
-        if (dotIndex != dots.length) {
+      pt.renderDot(dot).on('end', function () {
+        dotPTIndex += 1;
+        if (dotPTIndex < both_dots.length) {
           render();
         }
       });
     }
 
-    var colors = d3.schemeCategory20;
-
-    // var dots = [
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '    a0 -> a4',
-    //         '    a1 -> a4',
-    //         '    a2 -> a4',
-    //         '    a3 -> a4',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '    a0 -> a4',
-    //         '    a1 -> a4',
-    //         '    a2 -> a4',
-    //         '    a3 -> a4',
-    //         '    a0 -> a5',
-    //         '    a1 -> a5',
-    //         '    a2 -> a5',
-    //         '    a3 -> a5',
-    //         '    a4 -> a5',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '    a0 -> a4',
-    //         '    a1 -> a4',
-    //         '    a2 -> a4',
-    //         '    a3 -> a4',
-    //         '    a0 -> a5',
-    //         '    a1 -> a5',
-    //         '    a2 -> a5',
-    //         '    a3 -> a5',
-    //         '    a4 -> a5',
-    //         '    a0 -> a6',
-    //         '    a1 -> a6',
-    //         '    a2 -> a6',
-    //         '    a3 -> a6',
-    //         '    a4 -> a6',
-    //         '    a5 -> a6',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '    a0 -> a4',
-    //         '    a1 -> a4',
-    //         '    a2 -> a4',
-    //         '    a3 -> a4',
-    //         '    a0 -> a5',
-    //         '    a1 -> a5',
-    //         '    a2 -> a5',
-    //         '    a3 -> a5',
-    //         '    a4 -> a5',
-    //         '    a0 -> a6',
-    //         '    a1 -> a6',
-    //         '    a2 -> a6',
-    //         '    a3 -> a6',
-    //         '    a4 -> a6',
-    //         '    a5 -> a6',
-    //         '    a0 -> a7',
-    //         '    a1 -> a7',
-    //         '    a2 -> a7',
-    //         '    a3 -> a7',
-    //         '    a4 -> a7',
-    //         '    a6 -> a7',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '    a0 -> a4',
-    //         '    a1 -> a4',
-    //         '    a2 -> a4',
-    //         '    a3 -> a4',
-    //         '    a0 -> a5',
-    //         '    a1 -> a5',
-    //         '    a2 -> a5',
-    //         '    a3 -> a5',
-    //         '    a4 -> a5',
-    //         '    a0 -> a6',
-    //         '    a1 -> a6',
-    //         '    a2 -> a6',
-    //         '    a3 -> a6',
-    //         '    a4 -> a6',
-    //         '    a5 -> a6',
-    //         '    a0 -> a7',
-    //         '    a1 -> a7',
-    //         '    a2 -> a7',
-    //         '    a3 -> a7',
-    //         '    a4 -> a7',
-    //         '    a6 -> a7',
-    //         '    a0 -> a8',
-    //         '    a1 -> a8',
-    //         '    a2 -> a8',
-    //         '    a3 -> a8',
-    //         '    a4 -> a8',
-    //         '    a6 -> a8',
-    //         '    a7 -> a8',
-    //         '}'
-    //     ],
-    //     [
-    //         'digraph  {',
-    //         '    graph [rankdir=TB]',
-    //         '    node [style="filled"]',
-    //         '    a0 [shape="circle" label="" fillcolor="' + colors[0] + '"]',
-    //         '    a1 [shape="circle" label="" fillcolor="' + colors[1] + '"]',
-    //         '    a2 [shape="circle" label="" fillcolor="' + colors[2] + '"]',
-    //         '    a3 [shape="circle" label="" fillcolor="' + colors[3] + '"]',
-    //         '    a4 [shape="circle" label="" fillcolor="' + colors[4] + '"]',
-    //         '    a5 [shape="circle" label="" fillcolor="' + colors[5] + '"]',
-    //         '    a6 [shape="circle" label="" fillcolor="' + colors[6] + '"]',
-    //         '    a7 [shape="circle" label="" fillcolor="' + colors[7] + '"]',
-    //         '    a8 [shape="circle" label="" fillcolor="' + colors[8] + '"]',
-    //         '    a9 [shape="circle" label="" fillcolor="' + colors[9] + '"]',
-    //         '    a0 -> a1',
-    //         '    a0 -> a2',
-    //         '    a1 -> a2',
-    //         '    a0 -> a3',
-    //         '    a1 -> a3',
-    //         '    a2 -> a3',
-    //         '    a0 -> a4',
-    //         '    a1 -> a4',
-    //         '    a2 -> a4',
-    //         '    a3 -> a4',
-    //         '    a0 -> a5',
-    //         '    a1 -> a5',
-    //         '    a2 -> a5',
-    //         '    a3 -> a5',
-    //         '    a4 -> a5',
-    //         '    a0 -> a6',
-    //         '    a1 -> a6',
-    //         '    a2 -> a6',
-    //         '    a3 -> a6',
-    //         '    a4 -> a6',
-    //         '    a5 -> a6',
-    //         '    a0 -> a7',
-    //         '    a1 -> a7',
-    //         '    a2 -> a7',
-    //         '    a3 -> a7',
-    //         '    a4 -> a7',
-    //         '    a6 -> a7',
-    //         '    a0 -> a8',
-    //         '    a1 -> a8',
-    //         '    a2 -> a8',
-    //         '    a3 -> a8',
-    //         '    a4 -> a8',
-    //         '    a6 -> a8',
-    //         '    a7 -> a8',
-    //         '    a0 -> a9',
-    //         '    a1 -> a9',
-    //         '    a2 -> a9',
-    //         '    a3 -> a9',
-    //         '    a4 -> a9',
-    //         '    a6 -> a9',
-    //         '    a7 -> a9',
-    //         '    a8-> a9',
-    //         '}'
-    //     ],
-    // ];
-
-    // PT Digraph
-    var dots = [
-      ['digraph tree {    "0x1bc777fbbb0" [label="E"];}'],
+    var both_dots = [
+      ['digraph tree {    "E0" [label=E type=PT];}'],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "T112" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "T112" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "T112" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";"a5" [label=a type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e2040" [label="A1"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e2040" [label="A1"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e2040" [label="A1"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e2040" [label="A1"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e22e0" [label="<int:2>"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e2040" [label="A1"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";    "0x1bc778e2220" -> "0x1bc778e22e0";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e22e0" [label="<int:2>"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e21c0" [label="e"];    "0x1bc778e2040" [label="A1"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";    "0x1bc778e2220" -> "0x1bc778e22e0";    "0x1bc778e2100" -> "0x1bc778e21c0";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "A129" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e22e0" [label="<int:2>"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e21c0" [label="e"];    "0x1bc778e2040" [label="A1"];    "0x1bc778e2130" [label="e"];    "0x1bc778cce20" [label="C1"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";    "0x1bc778e2220" -> "0x1bc778e22e0";    "0x1bc778e2100" -> "0x1bc778e21c0";    "0x1bc778e2040" -> "0x1bc778e2130";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "T131" [label=T1 type=PT];    "A129" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e22e0" [label="<int:2>"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e21c0" [label="e"];    "0x1bc778e2040" [label="A1"];    "0x1bc778e2130" [label="e"];    "0x1bc778cce20" [label="C1"];    "0x1bc778e2160" [label="e"];    "0x1bc778ccb80" [label="E1"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";    "0x1bc778e2220" -> "0x1bc778e22e0";    "0x1bc778e2100" -> "0x1bc778e21c0";    "0x1bc778e2040" -> "0x1bc778e2130";    "0x1bc778cce20" -> "0x1bc778e2160";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "T131" [label=T1 type=PT];    "A129" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x1bc777fbbb0" [label="E"];    "0x1bc778ccb50" [label="C"];    "0x1bc778ccc10" [label="A"];    "0x1bc778cccd0" [label="T"];    "0x1bc778ccd90" [label="F"];    "0x1bc778cce50" [label="P"];    "0x1bc778ccee0" [label="A"];    "0x1bc778ccf70" [label="<int:1>"];    "0x1bc778ccdc0" [label="T1"];    "0x1bc778cce80" [label="e"];    "0x1bc778ccd00" [label="A1"];    "0x1bc778ccdf0" [label="e"];    "0x1bc778ccc40" [label="C1"];    "0x1bc778ccd30" [label=">="];    "0x1bc778ccd60" [label="A"];    "0x1bc778ccf40" [label="T"];    "0x1bc778e20d0" [label="F"];    "0x1bc778e2190" [label="P"];    "0x1bc778e2220" [label="A"];    "0x1bc778e22e0" [label="<int:2>"];    "0x1bc778e2100" [label="T1"];    "0x1bc778e21c0" [label="e"];    "0x1bc778e2040" [label="A1"];    "0x1bc778e2130" [label="e"];    "0x1bc778cce20" [label="C1"];    "0x1bc778e2160" [label="e"];    "0x1bc778ccb80" [label="E1"];    "0x1bc778ccc70" [label="e"];    "0x1bc777fbbb0" -> "0x1bc778ccb50";    "0x1bc777fbbb0" -> "0x1bc778ccb80";    "0x1bc778ccb50" -> "0x1bc778ccc10";    "0x1bc778ccb50" -> "0x1bc778ccc40";    "0x1bc778ccc10" -> "0x1bc778cccd0";    "0x1bc778ccc10" -> "0x1bc778ccd00";    "0x1bc778cccd0" -> "0x1bc778ccd90";    "0x1bc778cccd0" -> "0x1bc778ccdc0";    "0x1bc778ccd90" -> "0x1bc778cce50";    "0x1bc778cce50" -> "0x1bc778ccee0";    "0x1bc778ccee0" -> "0x1bc778ccf70";    "0x1bc778ccdc0" -> "0x1bc778cce80";    "0x1bc778ccd00" -> "0x1bc778ccdf0";    "0x1bc778ccc40" -> "0x1bc778ccd30";    "0x1bc778ccc40" -> "0x1bc778ccd60";    "0x1bc778ccc40" -> "0x1bc778cce20";    "0x1bc778ccd60" -> "0x1bc778ccf40";    "0x1bc778ccd60" -> "0x1bc778e2040";    "0x1bc778ccf40" -> "0x1bc778e20d0";    "0x1bc778ccf40" -> "0x1bc778e2100";    "0x1bc778e20d0" -> "0x1bc778e2190";    "0x1bc778e2190" -> "0x1bc778e2220";    "0x1bc778e2220" -> "0x1bc778e22e0";    "0x1bc778e2100" -> "0x1bc778e21c0";    "0x1bc778e2040" -> "0x1bc778e2130";    "0x1bc778cce20" -> "0x1bc778e2160";    "0x1bc778ccb80" -> "0x1bc778ccc70";}',
-      ],
-    ];
-
-    // AST_Digraph
-    var dots = [
-      ['digraph tree {    "0x26232039850" [label="+"];}'],
-      [
-        'digraph tree {    "0x26232039850" [label="+"];    "0x26232825fd0" [label="< int:1 >"];    "0x26232039850" -> "0x26232825fd0";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "T131" [label=T1 type=PT];    "A129" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x26232039850" [label="+"];    "0x26232825fd0" [label="< int:1 >"];    "0x26232825f70" [label="< int:2 >"];    "0x26232039850" -> "0x26232825fd0";    "0x26232039850" -> "0x26232825f70";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "A129" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];}',
       ],
       [
-        'digraph tree {    "0x26232039850" [label="+"];    "0x26232825fd0" [label="< int:1 >"];    "0x26232825f70" [label="< int:2 >"];    "0x26232039850" -> "0x26232825fd0";    "0x26232039850" -> "0x26232825f70";}',
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "A138" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "T140" [label=T1 type=PT];    "A138" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "T140" [label=T1 type=PT];    "A138" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "T140" [label=T1 type=PT];    "A138" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "A138" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    "e47" [label=e type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";    "E125" -> "e47";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    "e47" [label=e type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "e48" [label=e type=PT];    "A110" [label=A1 type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";    "E125" -> "e47";    "T118" -> "e48";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";"< * >48" [label=< * > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"< * >48" -> "< + >45";"< * >48" -> "int16";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    "e47" [label=e type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "e48" [label=e type=PT];    "A110" [label=A1 type=PT];    "e49" [label=e type=PT];    "C18" [label=C1 type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";    "E125" -> "e47";    "T118" -> "e48";    "A110" -> "e49";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";"< * >48" [label=< * > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"< * >48" -> "< + >45";"< * >48" -> "int16";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    "e47" [label=e type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "e48" [label=e type=PT];    "A110" [label=A1 type=PT];    "e49" [label=e type=PT];    "C18" [label=C1 type=PT];    "e50" [label=e type=PT];    "E16" [label=E1 type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";    "E125" -> "e47";    "T118" -> "e48";    "A110" -> "e49";    "C18" -> "e50";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";"< * >48" [label=< * > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"< * >48" -> "< + >45";"< * >48" -> "int16";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    "e47" [label=e type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "e48" [label=e type=PT];    "A110" [label=A1 type=PT];    "e49" [label=e type=PT];    "C18" [label=C1 type=PT];    "e50" [label=e type=PT];    "E16" [label=E1 type=PT];    "e51" [label=e type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";    "E125" -> "e47";    "T118" -> "e48";    "A110" -> "e49";    "C18" -> "e50";    "E16" -> "e51";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";"< * >48" [label=< * > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"< * >48" -> "< + >45";"< * >48" -> "int16";}',
+      ],
+      [
+        'digraph tree {    "E0" [label=E type=PT];    "VAR1" [label=VAR type=PT];    "ID2" [label=ID type=PT];    "EQ3" [label=< = > type=PT];    "E4" [label=E type=PT];    "C5" [label=C type=PT];    "A7" [label=A type=PT];    "T9" [label=T type=PT];    "F11" [label=F type=PT];    "P13" [label=P type=PT];    "L14" [label=L type=PT];    "number15" [label=< int:2 > type=PT];    "T112" [label=T1 type=PT];    "*//16" [label=< * > type=PT];    "F17" [label=F type=PT];    "P19" [label=P type=PT];    "L20" [label=L type=PT];    "(21" [label=<(> type=PT];    "E22" [label=E type=PT];    "C24" [label=C type=PT];    "A26" [label=A type=PT];    "T28" [label=T type=PT];    "F30" [label=F type=PT];    "P32" [label=P type=PT];    "L33" [label=L type=PT];    "number34" [label=< int:3 > type=PT];    "T131" [label=T1 type=PT];    "e35" [label=e type=PT];    "A129" [label=A1 type=PT];    "+/-36" [label=< + > type=PT];    "T37" [label=T type=PT];    "F39" [label=F type=PT];    "P41" [label=P type=PT];    "L42" [label=L type=PT];    "number43" [label=< int:4 > type=PT];    "T140" [label=T1 type=PT];    "e44" [label=e type=PT];    "A138" [label=A1 type=PT];    "e45" [label=e type=PT];    "C127" [label=C1 type=PT];    "e46" [label=e type=PT];    "E125" [label=E1 type=PT];    "e47" [label=e type=PT];    ")23" [label=<)> type=PT];    "T118" [label=T1 type=PT];    "e48" [label=e type=PT];    "A110" [label=A1 type=PT];    "e49" [label=e type=PT];    "C18" [label=C1 type=PT];    "e50" [label=e type=PT];    "E16" [label=E1 type=PT];    "e51" [label=e type=PT];    "E0" -> "VAR1";    "E0" -> "ID2";    "E0" -> "EQ3";    "E0" -> "E4";    "E4" -> "C5";    "E4" -> "E16";    "C5" -> "A7";    "C5" -> "C18";    "A7" -> "T9";    "A7" -> "A110";    "T9" -> "F11";    "T9" -> "T112";    "F11" -> "P13";    "P13" -> "L14";    "L14" -> "number15";    "T112" -> "*//16";    "T112" -> "F17";    "T112" -> "T118";    "F17" -> "P19";    "P19" -> "L20";    "L20" -> "(21";    "L20" -> "E22";    "L20" -> ")23";    "E22" -> "C24";    "E22" -> "E125";    "C24" -> "A26";    "C24" -> "C127";    "A26" -> "T28";    "A26" -> "A129";    "T28" -> "F30";    "T28" -> "T131";    "F30" -> "P32";    "P32" -> "L33";    "L33" -> "number34";    "T131" -> "e35";    "A129" -> "+/-36";    "A129" -> "T37";    "A129" -> "A138";    "T37" -> "F39";    "T37" -> "T140";    "F39" -> "P41";    "P41" -> "L42";    "L42" -> "number43";    "T140" -> "e44";    "A138" -> "e45";    "C127" -> "e46";    "E125" -> "e47";    "T118" -> "e48";    "A110" -> "e49";    "C18" -> "e50";    "E16" -> "e51";"a5" [label=a type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"< + >45" -> "int44";"< + >45" -> "int35";"< * >48" [label=< * > type=AST fillcolor="#d62728"];"int44" [label=< int:4 > type=AST fillcolor="#d62728"];"int16" [label=< int:2 > type=AST fillcolor="#d62728"];"< * >48" -> "< + >45";"< * >48" -> "int16";"< = >52" [label=< = > type=AST fillcolor="#d62728"];"< + >45" [label=< + > type=AST fillcolor="#d62728"];"int35" [label=< int:3 > type=AST fillcolor="#d62728"];"a5" [label=a type=AST fillcolor="#d62728"];"< = >52" -> "< * >48";"< = >52" -> "a5";"< + >45" -> "int44";"< + >45" -> "int35";}',
       ],
     ];
   </script>

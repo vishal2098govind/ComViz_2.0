@@ -1,6 +1,8 @@
 from Compiler.lexical_analyzer.lexer import Lexer
 from Compiler.semantic_analyzer.evaluate_ast import EvaluateAST
 from Compiler.syntax_analyzer.parser import Parser
+from Visualizer.visualize_ast import visualize_ast
+from Visualizer.visualize_pt import pt_digraphs
 
 
 def run(file_name, text):
@@ -16,7 +18,10 @@ def run(file_name, text):
 
     if invalid_syntax_error:
         return tokens, None, ast_root, invalid_syntax_error, None
-    print(parser.ast_trace)
+
+    # visualize_ast(parser.ast_trace[0])
+    # print(parser.trace)
+    print(pt_digraphs)
     evaluate_ast = EvaluateAST()
     eval_result = evaluate_ast.evaluate_node(node=ast_root)
 

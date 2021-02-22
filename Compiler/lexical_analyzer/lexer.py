@@ -175,7 +175,7 @@ class Lexer:
         char = self.current_char
         if self.current_char == '=':
             self.advance_char()
-            return Token(type_=TT_NE, value='!=' , position_start=pos_start, position_end=self.pos), None
+            return Token(type_=TT_NE, value='!=', position_start=pos_start, position_end=self.pos), None
 
         self.advance_char()
         return None, IllegalCharError(position_start=pos_start, position_end=self.pos, error_details='Expected "=" '

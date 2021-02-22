@@ -2,20 +2,29 @@ from anytree import AnyNode
 from anytree.exporter import UniqueDotExporter
 
 trace = []
-ast_digraphs = []
+ast_digraphs = ['']
+nodes_so_far = []
 
 
-def visualize_ast(node=None):
+def visualize_ast(node=None, ast_trace=None):
 
     if node:
-        pre_order(node=node)
-        global trace
+        if node not in nodes_so_far:
+            nodes_so_far.append(node)
+        global trace, ast_digraphs
         dgi = ''
-        for line in UniqueDotExporter(trace[0]):
-            # print(line)
-            dgi += line
-        # print(dgi)
-        ast_digraphs.append([dgi])
+
+        for line in UniqueDotExporter(node, nodenamefunc=lambda node: node.id, nodeattrfunc=lambda node:
+        f"label={node.name} type={node.type} fillcolor=\"#d62728\""):
+            if len(ast_digraphs) > 0 and line.strip() not in ast_digraphs[-1]:
+                for edge in line.strip().split(';'):
+                    if 'digraph' not in edge and edge not in ast_digraphs[-1]:
+                        dgi += line.strip() if not('digraph' in line or '}' in line ) else ''
+
+        print(dgi)
+        ast_digraphs.append(dgi)
+
+    # print(ast_digraphs)
 
 
 def pre_order(node, parent=None):
