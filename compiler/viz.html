@@ -7,16 +7,9 @@
   <div id="graph" style="text-align: center"></div>
   <script>
     digraphs = [
-      {
-        digraph:
-          'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";}',
-        matrix_index: [E, int],
-      },
-      {
-        digraph:
-          'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";}',
-        matrix_index: [F, int],
-      },
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";}',
+
+      'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";}',
       'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";}',
       'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";}',
       'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";}',
@@ -26,9 +19,46 @@
       'digraph tree {    "0x1cc199a8220" [label="E"];    "0x1cc199a8250" [label="T"];    "0x1cc199a8ee0" [label="F"];    "0x1cc199a8d90" [label="<int:1>"];    "0x1cc199a8e20" [label="T1"];    "0x1cc199a8d00" [label="e"];    "0x1cc199a8340" [label="E1"];    "0x1cc199a8df0" [label="<+>"];    "0x1cc199a8dc0" [label="T"];    "0x1cc199a8c40" [label="F"];    "0x1cc199a8b80" [label="<int:2>"];    "0x1cc199a8c10" [label="T1"];    "0x1cc199a8af0" [label="e"];    "0x1cc199a8cd0" [label="E1"];    "0x1cc199a8ac0" [label="e"];    "0x1cc199a8220" -> "0x1cc199a8250";    "0x1cc199a8220" -> "0x1cc199a8340";    "0x1cc199a8250" -> "0x1cc199a8ee0";    "0x1cc199a8250" -> "0x1cc199a8e20";    "0x1cc199a8ee0" -> "0x1cc199a8d90";    "0x1cc199a8e20" -> "0x1cc199a8d00";    "0x1cc199a8340" -> "0x1cc199a8df0";    "0x1cc199a8340" -> "0x1cc199a8dc0";    "0x1cc199a8340" -> "0x1cc199a8cd0";    "0x1cc199a8dc0" -> "0x1cc199a8c40";    "0x1cc199a8dc0" -> "0x1cc199a8c10";    "0x1cc199a8c40" -> "0x1cc199a8b80";    "0x1cc199a8c10" -> "0x1cc199a8af0";    "0x1cc199a8cd0" -> "0x1cc199a8ac0";}',
     ];
 
+    pt = [
+      `digraph tree {
+      AST Digraph : 
+      "db333c7b1e4f46c09a97ae50d998190a" [label=a type=AST fillcolor="#d62728"];
+
+      AST Digraph : 
+      "f5ae9af6855e483cb9a37b470f3c04cc" [label=< int:2 > type=AST fillcolor="#d62728"];
+
+      AST Digraph : 
+      "ddb2bc7973594973a0c3d9b4fe4d8359" [label=< int:3 > type=AST fillcolor="#d62728"];
+
+      AST Digraph : 
+      "d0324558666c490da9d9009f619c0b46" [label=< int:4 > type=AST fillcolor="#d62728"];
+
+      AST Digraph : 
+      "a46ce05c701748159647d0c0bbcb11af" [label=< + > type=AST fillcolor="#d62728"];
+      "ddb2bc7973594973a0c3d9b4fe4d8359" [label=< int:3 > type=AST fillcolor="#d62728"];
+      "a46ce05c701748159647d0c0bbcb11af" -> "d0324558666c490da9d9009f619c0b46";
+      "a46ce05c701748159647d0c0bbcb11af" -> "ddb2bc7973594973a0c3d9b4fe4d8359";
+      
+      AST Digraph : 
+      "79ac222cb4fd4db3a7f540a150669eef" [label=< * > type=AST fillcolor="#d62728"];
+      "d0324558666c490da9d9009f619c0b46" [label=< int:4 > type=AST fillcolor="#d62728"];
+      "f5ae9af6855e483cb9a37b470f3c04cc" [label=< int:2 > type=AST fillcolor="#d62728"];
+      "79ac222cb4fd4db3a7f540a150669eef" -> "a46ce05c701748159647d0c0bbcb11af";
+      "79ac222cb4fd4db3a7f540a150669eef" -> "f5ae9af6855e483cb9a37b470f3c04cc";
+      
+      AST Digraph : 
+      "7f6f8afefddc4532bfb0ce830bef5d40" [label=< = > type=AST fillcolor="#d62728"];
+      "a46ce05c701748159647d0c0bbcb11af" [label=< + > type=AST fillcolor="#d62728"];
+      "ddb2bc7973594973a0c3d9b4fe4d8359" [label=< int:3 > type=AST fillcolor="#d62728"];
+      "db333c7b1e4f46c09a97ae50d998190a" [label=a type=AST fillcolor="#d62728"];
+      "7f6f8afefddc4532bfb0ce830bef5d40" -> "79ac222cb4fd4db3a7f540a150669eef";
+      "7f6f8afefddc4532bfb0ce830bef5d40" -> "db333c7b1e4f46c09a97ae50d998190a";
+      "a46ce05c701748159647d0c0bbcb11af" -> "d0324558666c490da9d9009f619c0b46";
+      "a46ce05c701748159647d0c0bbcb11af" -> "ddb2bc7973594973a0c3d9b4fe4d8359";}`,
+    ];
     // digraphs.forEach(digraph => {
     //   d3.select('#graph').graphviz().renderDot(digraph);
     // });
-    d3.select('#graph').graphviz().renderDot(digraphs[7]);
+    d3.select('#graph').graphviz().renderDot(pt[0]);
   </script>
 </body>

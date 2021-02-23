@@ -12,6 +12,6 @@ class Token:
             self.position_end = position_end.copy_position()
 
     def __repr__(self):
-        if self.value:
+        if self.value is not None:
             return f'< {self.type}:{self.value} >'
         return f'< {self.type} >'

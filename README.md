@@ -1,3 +1,4 @@
+<<<<<<< HEAD
  #### Setup
 * Please ensure that you have python3 installed, after which you may create a virtual environment, the steps are mentioned [here](https://naysan.ca/2019/08/05/install-python-3-virtualenv-on-ubuntu/).
 
@@ -20,3 +21,7 @@
     ```
 
 * The above commands will start the server at localhost port 8000
+=======
+# ComViz_2.0
+Visualize Compiler Phases
+>>>>>>> 893e73adc608772420b09c717ab6c015fce6724b
