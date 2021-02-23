@@ -2,29 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/error_handler/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/error_handler/error.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/error_handler/illegal_char_error.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/error_handler/invalid_syntax_error.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/error_handler/position.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/error_handler/runtime_error.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/constants.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/run.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/context.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/data_types.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/runtime_result.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/symbol_table.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/nodes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parse_result.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parser.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shell.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,8 +48,8 @@
       <recent name="D:\GeeK\ComViZ_2.0\compiler\Compiler" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.shell (1)">
-    <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.shell">
+    <configuration name="jsonPython" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="ComViZ_2.0" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -81,7 +61,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/jsonPython.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -90,7 +70,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="shell (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="shell" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="ComViZ_2.0" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -111,31 +91,10 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="shell" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="ComViZ_2.0" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/shell.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.shell (1)" />
         <item itemvalue="Python.shell" />
+        <item itemvalue="Python.jsonPython" />
       </list>
     </recent_temporary>
   </component>

@@ -1,6 +1,6 @@
 from Compiler.run import run, global_symbol_table
 from Visualizer.visualize_pt import pt_digraphs
-
+import json
 response = {
     "tokens": None,
     "lexer_errors": None,
@@ -22,8 +22,10 @@ def comviz(inp):
     else:
         # No lexical errors
         print(lexer_result)
-        response["tokens"] = lexer_result
-
+        tokens = []
+        for token in lexer_result:
+            tokens.append(token.__repr__())
+        response["tokens"] = tokens
         if syntax_errors:
             print(syntax_errors.as_string())
             response["syntax_errors"] = syntax_errors.as_string()
@@ -37,10 +39,11 @@ def comviz(inp):
                 response["runtime_error"] = runtime_errors.as_string()
             else:
                 # No runtime errors
-                print(eval_result)
-                response["evaluation_result"] = eval_result
-                response["symbol_table"] = global_symbol_table
-                print(response)
+                response["evaluation_result"] = eval_result.__repr__()
+                response["symbol_table"] = global_symbol_table.__repr__()
+                # print(json.dumps(response, indent=4))
 
-    return response
-comviz("1+2")
+    return json.dumps(response, indent=4)
+
+
+# comviz("VAR a = 1+2")
