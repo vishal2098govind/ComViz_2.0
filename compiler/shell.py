@@ -1,36 +1,46 @@
-from Compiler.run import run
-from Visualizer.visualize_pt import digraphs
+from Compiler.run import run, global_symbol_table
+from Visualizer.visualize_pt import pt_digraphs
 
-def generateCompilationOutput(text):
-    result = {}
-    lexer_result, lexer_errors, ast_root, syntax_errors = run(file_name='<stdin>', text=text)
+response = {
+    "tokens": None,
+    "lexer_errors": None,
+    "digraphs": None,
+    "syntax_errors": None,
+    "evaluation_result": None,
+    "runtime_error": None,
+    "symbol_table": None
+}
 
-    try:
-        if lexer_errors:
-            print(lexer_errors.as_string())
-            result['status'] = 'error'
-            result['data'] = lexer_errors.as_string()
+
+def comviz(inp):
+    lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',
+                                                                                           text=inp)
+
+    if lexer_errors:
+        print(lexer_errors.as_string())
+        response["lexer_errors"] = lexer_errors.as_string()
+    else:
+        # No lexical errors
+        print(lexer_result)
+        response["tokens"] = lexer_result
+
+        if syntax_errors:
+            print(syntax_errors.as_string())
+            response["syntax_errors"] = syntax_errors.as_string()
         else:
-            # No lexical errors
-            print(lexer_result)
+            # No syntax errors
+            print(ast_root)
+            response["digraphs"] = pt_digraphs
 
-            if syntax_errors:
-                result['status'] = 'error'
-                result['data'] = syntax_errors.as_string()
-                print(syntax_errors.as_string())
+            if runtime_errors:
+                print(runtime_errors.as_string())
+                response["runtime_error"] = runtime_errors.as_string()
             else:
-                # No syntax errors
-                result['status'] = 'success'
-                value = {
-                    'ast_root' : ast_root,
-                    'digraphs' : digraphs
-                }
-                result['data'] = str(value)
-                print(ast_root)
-                print(digraphs)
-        return result
-    except Exception as e:
-        print("An error occurred : "+str(e))
-        result['status'] = 'error'
-        result['data'] = str(e)
-        return result
+                # No runtime errors
+                print(eval_result)
+                response["evaluation_result"] = eval_result
+                response["symbol_table"] = global_symbol_table
+                print(response)
+
+    return response
+comviz("1+2")
