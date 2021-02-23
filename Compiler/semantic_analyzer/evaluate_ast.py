@@ -16,10 +16,12 @@ class EvaluateAST:
     def no_node(self, node):
         raise Exception(f'No such evaluate_{type(node).__name__} defined')
 
-    def evaluate_NumberNode(self, node):
+    @staticmethod
+    def evaluate_NumberNode(node):
         return Number(number_value=node.number_token.value).set_position(pos_start=node.pos_start, pos_end=node.pos_end)
 
     def evaluate_BinaryOperationNode(self, node):
+        result = None
         left_node = self.evaluate_node(node.left_node)
         right_node = self.evaluate_node(node.right_node)
 
@@ -32,14 +34,13 @@ class EvaluateAST:
         elif node.operator_token.type == TT_MINUS:
             result = left_node.sub_by(right_node)
 
-        elif node.operator_token.type ==TT_MUL:
+        elif node.operator_token.type == TT_MUL:
             result = left_node.mul_to(right_node)
 
         elif node.operator_token.type == TT_DIV:
             result = left_node.div_by(right_node)
 
         return result.set_position(pos_start=node.pos_start, pos_end=node.pos_end)
-
 
     def evaluate_UnaryOperationNode(self, node):
         number = self.evaluate_node(node.right_node)
@@ -48,5 +49,3 @@ class EvaluateAST:
             return number.mul_to(Number(number_value=-1))
 
         return number.set_position(pos_start=node.pos_start, pos_end=node.pos_end)
-
-

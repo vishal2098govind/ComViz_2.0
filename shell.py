@@ -1,6 +1,4 @@
 from Compiler.run import run
-from Visualizer.visualize_ast import ast_digraphs, visualize_ast
-from Visualizer.visualize_pt import pt_digraphs
 
 while True:
     text = input('comviz >')

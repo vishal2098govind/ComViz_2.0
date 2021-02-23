@@ -46,8 +46,8 @@ from Compiler.error_handler.invalid_syntax_error import InvalidSyntaxError
 from Compiler.lexical_analyzer.constants import *
 from Compiler.syntax_analyzer.nodes import *
 from Compiler.syntax_analyzer.parse_result import ParseResult
-from Visualizer.visualize_ast import visualize_ast, ast_digraphs
-from Visualizer.visualize_pt import visualize_parse_tree, pt_digraphs
+from Visualizer.visualize_ast import visualize_ast
+from Visualizer.visualize_pt import visualize_parse_tree
 import uuid
 
 
@@ -95,9 +95,9 @@ class Parser:
 
             self.trace.append(terminal_node)
 
-            num_node = AnyNode(type="AST", id=token.type+str(len(self.trace)), name=token)
+            num_node = AnyNode(type="AST", id=uuid.uuid4().hex, name=token)
             self.ast_trace.append(num_node)
-            visualize_ast(num_node, self.ast_trace)
+            visualize_ast(num_node)
 
             visualize_parse_tree(self.trace)
 
@@ -111,9 +111,9 @@ class Parser:
 
             parse_result.register(self.advance_token())
 
-            var_node = AnyNode(type="AST", id=token+str(len(self.trace)), name=token.value)
+            var_node = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
             self.ast_trace.append(var_node)
-            visualize_ast(var_node, self.ast_trace)
+            visualize_ast(var_node)
             visualize_parse_tree(self.trace)
 
             return parse_result.success(node=VariableAccessNode(var_name_token=token))
@@ -173,7 +173,6 @@ class Parser:
                 self.trace.append(non_terminal_p_node)
                 visualize_parse_tree(self.trace)
 
-
                 a_node = parse_result.register(parse_result=self.leaf(caller=non_terminal_a_node))
                 if parse_result.error:
                     return parse_result
@@ -186,11 +185,11 @@ class Parser:
 
                 right = self.ast_trace.pop()
                 left = self.ast_trace.pop()
-                root = AnyNode(type="AST", id=token+str(len(self.trace)), name=power_token.value)
+                root = AnyNode(type="AST", id=uuid.uuid4().hex, name=power_token.value)
                 right.parent = root
                 left.parent = root
                 self.ast_trace.append(root)
-                visualize_ast(root, self.ast_trace)
+                visualize_ast(root)
 
                 return parse_result.success(node=BinaryOperationNode(left_node=a_node, operator_token=power_token,
                                                                      right_node=p_node))
@@ -229,9 +228,9 @@ class Parser:
             terminal_node = AnyNode(type="PT", id='+' + str(len(self.trace)), name=token, parent=caller)
             self.trace.append(terminal_node)
 
-            plus_node = AnyNode(type="AST", id=token+str(len(self.trace)), name=token.type)
+            plus_node = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.type)
             self.ast_trace.append(plus_node)
-            visualize_ast(plus_node, self.ast_trace)
+            visualize_ast(plus_node)
 
             non_terminal_f_node = AnyNode(type="PT", id='F' + str(len(self.trace)), name='F', parent=caller)
             self.trace.append(non_terminal_f_node)
@@ -244,11 +243,10 @@ class Parser:
                 return parse_result
 
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=token+str(len(self.trace)), name=token.value)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
             left.parent = root
             self.ast_trace.append(root)
-            visualize_ast(root, self.ast_trace)
-
+            visualize_ast(root)
 
             return parse_result.success(node=UnaryOperationNode(operator_token=operator_token, right_node=p_node))
 
@@ -299,11 +297,11 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=operator_token.type+str(len(self.trace)), name=operator_token.type)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=operator_token.type)
             right.parent = root
             left.parent = root
             self.ast_trace.append(root)
-            visualize_ast(root, self.ast_trace)
+            visualize_ast(root)
 
             t1_node = parse_result.register(
                 parse_result=self.term_1(left_child=BinaryOperationNode(left_node=left_child,
@@ -394,11 +392,11 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=operator_token.type+str(len(self.trace)), name=operator_token.type)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=operator_token.type)
             right.parent = root
             left.parent = root
             self.ast_trace.append(root)
-            visualize_ast(root, self.ast_trace)
+            visualize_ast(root)
 
             e1_node = parse_result.register(parse_result=self.arith_expression_1(left_child=BinaryOperationNode(
                 left_node=left_child,
@@ -465,7 +463,8 @@ class Parser:
 
         # C1 -> < A C1 | <= A C1 | > A C1 | >= A C1 | == A C1 | != A C1
         if token.type in (TT_LT, TT_GT, TT_GTE, TT_LTE, TT_NE, TT_EE):
-            terminal_comp_node = AnyNode(type="PT", id=token.type + str(len(self.trace)), name=token.value, parent=caller)
+            terminal_comp_node = AnyNode(type="PT", id=token.type + str(len(self.trace)),
+                                         name=token.value, parent=caller)
             self.trace.append(terminal_comp_node)
 
             non_terminal_a_node = AnyNode(type="PT", id='A' + str(len(self.trace)), name='A', parent=caller)
@@ -483,12 +482,11 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=token+str(len(self.trace)), name=token.value)
-            right.parent=root
-            left.parent= root
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
+            right.parent = root
+            left.parent = root
             self.ast_trace.append(root)
-            visualize_ast(root, self.ast_trace )
-
+            visualize_ast(root)
 
             c1_node = parse_result.register(parse_result=self.comparison_expression_1(left_child=BinaryOperationNode(
                 left_node=left_child, operator_token=token, right_node=a_node), caller=non_terminal_c1_node))
@@ -533,9 +531,9 @@ class Parser:
                 return parse_result
 
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=token+str(len(self.trace)), name=token.value, children=[left])
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value, children=[left])
             self.ast_trace.append(root)
-            visualize_ast(root, self.ast_trace)
+            visualize_ast(root)
 
             return parse_result.success(node=UnaryOperationNode(operator_token=token, right_node=c_node))
 
@@ -572,7 +570,8 @@ class Parser:
 
         # E1 -> AND C E1 | OR C E1
         if token.type == TT_KEYWORD and token.value in ('AND', 'OR'):
-            terminal_logical_node = AnyNode(type="PT", id=token.value + str(len(self.trace)), name=token.value, parent=caller)
+            terminal_logical_node = AnyNode(type="PT", id=token.value + str(len(self.trace)), name=token.value,
+                                            parent=caller)
             self.trace.append(terminal_logical_node)
 
             non_terminal_c_node = AnyNode(type="PT", id='C' + str(len(self.trace)), name='C', parent=caller)
@@ -590,11 +589,11 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=token+str(len(self.trace)), name=token.value)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
             right.parent = root
             left.parent = root
             self.ast_trace.append(root)
-            visualize_ast(root, self.ast_trace)
+            visualize_ast(root)
 
             e1_node = parse_result.register(parse_result=self.expression_1(
                 left_child=BinaryOperationNode(left_node=left_child, operator_token=token,
@@ -665,10 +664,10 @@ class Parser:
                 variable_name_token = self.current_token
                 parse_result.register(self.advance_token())
 
-                left = AnyNode(type="AST", id=variable_name_token.value+str(len(self.trace)),
+                left = AnyNode(type="AST", id=uuid.uuid4().hex,
                                name=variable_name_token.value)
                 self.ast_trace.append(left)
-                visualize_ast(left, self.ast_trace)
+                visualize_ast(left)
                 visualize_parse_tree(self.trace)
 
                 if self.current_token.type == TT_EQ:
@@ -680,11 +679,11 @@ class Parser:
                     right = self.ast_trace.pop()
                     var = self.ast_trace.pop()
 
-                    root = AnyNode(type="AST", id='< = >'+str(len(self.trace)), name='< = >')
-                    right.parent=root
-                    var.parent=root
+                    root = AnyNode(type="AST", id=uuid.uuid4().hex, name='< = >')
+                    right.parent = root
+                    var.parent = root
                     self.ast_trace.append(root)
-                    visualize_ast(root, self.ast_trace)
+                    visualize_ast(root)
 
                     return parse_result.success(node=VariableAssignNode(variable_name_token=variable_name_token,
                                                                         variable_value=e_node))
