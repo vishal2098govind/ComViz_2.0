@@ -43,7 +43,7 @@ def comviz(inp):
                 response["symbol_table"] = global_symbol_table.__repr__()
                 # print(json.dumps(response, indent=4))
 
-    return json.dumps(response, indent=4)
+    return response
 
 
 # comviz("VAR a = 1+2")

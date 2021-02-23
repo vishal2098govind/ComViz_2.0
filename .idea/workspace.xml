@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

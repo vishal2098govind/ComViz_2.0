@@ -19,13 +19,3 @@ class Token:
             return f'< {self.type}:{self.value} >'
         return f'< {self.type} >'
 
-
-class TokenEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(0, Token):
-            return {
-                'type': o.type,
-                'value': o.value
-            }
-
-        return super().default(o)
