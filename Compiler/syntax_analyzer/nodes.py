@@ -38,7 +38,7 @@ class VariableAccessNode:
         self.var_name_token = var_name_token
 
         self.pos_start = self.var_name_token.position_start
-        self.pos_end = self.var_name_token.pos_end
+        self.pos_end = self.var_name_token.position_end
 
     def __repr__(self):
         return f'({self.var_name_token})'

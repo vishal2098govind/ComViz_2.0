@@ -225,12 +225,8 @@ class Parser:
         # F -> + P | - P
         if token.type in (TT_PLUS, TT_MINUS):
             operator_token = token
-            terminal_node = AnyNode(type="PT", id='+' + str(len(self.trace)), name=token, parent=caller)
+            terminal_node = AnyNode(type="PT", id='+' + str(len(self.trace)), name=f'< {token.type} >', parent=caller)
             self.trace.append(terminal_node)
-
-            plus_node = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.type)
-            self.ast_trace.append(plus_node)
-            visualize_ast(plus_node)
 
             non_terminal_f_node = AnyNode(type="PT", id='F' + str(len(self.trace)), name='F', parent=caller)
             self.trace.append(non_terminal_f_node)
@@ -243,7 +239,7 @@ class Parser:
                 return parse_result
 
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=f'< {token.type} >')
             left.parent = root
             self.ast_trace.append(root)
             visualize_ast(root)
@@ -373,7 +369,8 @@ class Parser:
         # A1 -> + T A1 | - T A1
         if operator_token.type in (TT_PLUS, TT_MINUS):
 
-            terminal_node = AnyNode(type="PT", id='+/-' + str(len(self.trace)), name=operator_token.type, parent=caller)
+            terminal_node = AnyNode(type="PT", id='+/-' + str(len(self.trace)), name=f'< {operator_token.type} >',
+                                    parent=caller)
             self.trace.append(terminal_node)
 
             non_terminal_t_node = AnyNode(type="PT", id='T' + str(len(self.trace)), name='T', parent=caller)
@@ -392,7 +389,7 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=operator_token.type)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=f'< {operator_token.type} >')
             right.parent = root
             left.parent = root
             self.ast_trace.append(root)
