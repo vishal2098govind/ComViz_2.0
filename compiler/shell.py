@@ -36,6 +36,7 @@ def comviz(source_code):
         for token in lexer_result:
             tokens.append(token.__repr__())
         response["tokens"] = tokens
+
         if syntax_errors:
             print(syntax_errors.as_string())
             response["syntax_errors"] = syntax_errors.as_string()
@@ -65,4 +66,4 @@ def comviz(source_code):
     return result
 
 
-# comviz("VAR a = 1+2")
+comviz("VAR a = 1+2")
