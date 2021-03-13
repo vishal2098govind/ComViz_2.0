@@ -70,7 +70,7 @@ function Vizualizer() {
     }
   return (
     <div className={classes.root}>
-    <Typography variant='h2' className={classes.headText} style={{position:'fixed',bottom:'690px'}}>
+    <Typography variant='h2' className={classes.headText} style={{position:'fixed',bottom:'650px'}}>
             <spam style={{color:'#FEFFFF'}}> {step==0? 'LEXICAL': 'SYNTAX'} </spam> ANALYSIS
     </Typography>
     {phaseRender()}

@@ -56,7 +56,6 @@ function Graph() {
   const classes = useStyles();
 const [slideshow,setSlideshow]=useState(false);
 const [dotArrayIndex,setDotArrayIndex]=useState(0)
-console.log(window);
 const d3=window.d3;
 // var dots = [
 //     [
@@ -126,7 +125,6 @@ useEffect(()=>{
     
     function render() {
       if(slideshow){
-        console.log('call1')
         let dotLines = dots[dotIndex % dots.length];
         let dot = dotLines.join('');
       graphviz
@@ -138,7 +136,6 @@ useEffect(()=>{
               }
           });
       }else{
-        console.log('call2')
         let dotLines = dots[dotArrayIndex];
         let dot = dotLines.join('');
         graphviz

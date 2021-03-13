@@ -105,7 +105,7 @@ syData.var.forEach((col,index)=>{
   
 })
 symbolTableData.push(object)
-console.log(symbolTableData)
+
 
 
 
@@ -141,21 +141,23 @@ console.log(symbolTableData)
     // </Grid>
     
     // </div>
-    <div style={{}}>
+    <div>
       <Typography variant='h3' className={classes.headText}>
              <spam style={{color:'#FEFFFF'}}>Token </spam> List
       </Typography>
-         <ReactTable 
-         columns={tokenListColumns}
-         inverted={true} type={'tokenList'}
-         />
+        <ReactTable 
+          columns={tokenListColumns}
+          inverted={true} type={'tokenList'}
+          />
+
          <Typography variant='h3' className={classes.headText} style={{marginTop:'60px'}}>
              <spam style={{color:'#FEFFFF'}}>Symbol </spam> Table
       </Typography>
-         <ReactTable 
+
+      <ReactTable 
          data={symbolTableData} columns={symbolTableColumns}
          inverted={true}
-         />
+         /> 
     </div>
   );
 }

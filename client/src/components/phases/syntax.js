@@ -159,6 +159,42 @@ ab.term.forEach((val,index)=>{
   })
 }) 
 
+
+let dummyColumn=[{
+  Header: '',
+  accessor: 'terminal'
+},
+{
+  getProps: (state, rowInfo) => {
+    if (rowInfo && rowInfo.row) {
+      return {
+        style: {
+          background:
+            rowInfo.row.int ? "red" : null
+        }
+      };
+    } else {
+      return {};
+    }
+  },
+  Header: "int",
+  accessor: "int"
+},]
+
+let dummyData=[{
+  terminal: 'A',
+  int: '-> TA1'
+},
+{
+  terminal: 'A',
+  int: '-> TA1'
+},
+{
+  terminal: 'B',
+  int: '-> TA1'
+},
+]
+
 const syntaxStep=()=>{
     // if(step<0){
     //   setStep(0)
@@ -168,7 +204,7 @@ const syntaxStep=()=>{
     switch(step){
         case 0: return(
         <div style={{display:'inline-block',marginTop:'-12px'}}>
-        <div style={{display:'inline-block', marginBottom: '40px'}}>
+        <div style={{display:'inline-block', marginBottom: '20px'}}>
         <ReactTable data={grammarTableData} columns={grammarTableColumns}
           size={'large'}
         />
@@ -192,7 +228,20 @@ const syntaxStep=()=>{
         )
         case 2: return(
             <div>
-                  <Graph/>
+                <Grid container spacing={3}>
+                   <Grid item md={7.2}>
+                     <div style={{marginTop:'40px'}}>
+                      <ReactTable 
+                      size={'small'}
+          />
+                     </div>
+                   
+                   </Grid>
+                   <Grid item md={4}>
+                      <Graph/>
+                   </Grid>
+                </Grid>
+                  
             </div>
         )
         
@@ -207,7 +256,7 @@ const title=[{
     first: 'Parse',
     second: 'Table'
 },{
-    first: 'Parse Tree ',
+    first: 'Parse Table ',
     second: '& AST'
 },]
   return (

@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 import { useTable } from 'react-table'
+import { Backdrop } from '@material-ui/core'
 
 
 
@@ -33,7 +34,13 @@ function Table({ columns, data }) {
           return (
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => {
-                return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                console.log(cell)
+                if(cell.column.Header=='+' && cell.row.values.terminal=='E'){
+                  return <td style={{background:'red'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                }else{
+                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                }
+                
               })}
             </tr>
           )
@@ -196,12 +203,16 @@ function ReactTable(props) {
             })
         }
     }
-    console.log(props.size)
     const Styles = styled.div`
-    padding: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': '1rem')};
-    font-size: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': '1rem')};
+    padding: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.2rem' : '0.85rem'))};
+    font-size: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.65rem' : '0.85rem'))};
+    
     table {
       border-spacing: 0;
+      margin-left:auto;
+      margin-right:auto;
+      margin-top:auto;
+      margin-bottom:auto;
       border: 3px solid black;
       tr {
         :last-child {

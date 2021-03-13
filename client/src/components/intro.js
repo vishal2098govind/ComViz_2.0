@@ -55,7 +55,6 @@ const useStyles = makeStyles((theme) => ({
 function Intro(props) {
 const classes = useStyles();
 const [start,setStart]=useState(false)
-console.log(props)
 const First=()=>{
     return(
         <div>
