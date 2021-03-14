@@ -3,7 +3,7 @@ from Compiler.semantic_analyzer.context import Context
 from Compiler.semantic_analyzer.data_types import Number
 from Compiler.semantic_analyzer.evaluate_ast import EvaluateAST
 from Compiler.semantic_analyzer.symbol_table import SymbolTable
-from Compiler.syntax_analyzer.parser import Parser
+from Compiler.syntax_analyzer.top_down_parser  import Parser
 
 global_symbol_table = SymbolTable()
 global_symbol_table.set_var_value("NULL", Number(0))

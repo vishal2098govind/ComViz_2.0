@@ -1,26 +1,10 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
-<style>
-  .container {
-    display: flex;
-    flex-direction: column;
-  }
-  #graph {
-    background-color: 'yellow';
-  }
-  #graph1 {
-    background-color: 'green';
-  }
-</style>
 <body>
   <script src="//d3js.org/d3.v4.min.js"></script>
   <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
   <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
-  <div class="container">
-    <div id="graph" style="text-align: center"></div>
-    <div id="ast" style="text-align: center"></div>
-  </div>
-
+  <div id="graph" style="text-align: center"></div>
   <script>
     function attributer(datum, index, nodes) {
       var selection = d3.select(this);
@@ -29,15 +13,14 @@
         var height = window.innerHeight;
         var x = 200;
         var y = 10;
-        var scale = 1;
+        var scale = 0.75;
         selection
           .attr('width', width + 'pt')
           .attr('height', height + 'pt')
           .attr(
             'viewBox',
             -x + ' ' + -y + ' ' + width / scale + ' ' + height / scale
-          )
-          .attr('fill', 'yellow');
+          );
         datum.attributes.width = width + 'pt';
         datum.attributes.height = height + 'pt';
         datum.attributes.viewBox =
@@ -46,11 +29,11 @@
     }
 
     function transitionFactory() {
-      return d3.transition('main').ease(d3.easeLinear).delay(10).duration(500);
+      return d3.transition('main').ease(d3.easeLinear).delay(40).duration(900);
     }
 
-    var dotPTIndex = 0;
-    var pt = d3
+    var dotIndex = 0;
+    var graphviz = d3
       .select('#graph')
       .graphviz()
       .logEvents(true)
@@ -60,71 +43,61 @@
       .attributer(attributer);
 
     function render() {
-      var dotLines = both_dots[dotPTIndex % both_dots.length];
+      var dotLines = dots[dotIndex % dots.length];
       var dot = dotLines.join('');
-      pt.renderDot(dot).on('end', function () {
-        dotPTIndex += 1;
-        if (dotPTIndex < both_dots.length) {
+      graphviz.renderDot(dot).on('end', function () {
+        dotIndex += 1;
+        if (dotIndex != dots.length) {
           render();
         }
       });
     }
 
-    var both_dots = [
-      ['digraph tree {    "E0" [label=E];}'],
+    var colors = d3.schemeCategory20;
+
+    var dots = [
+      ['digraph tree {    "0x1d90c4408b0" [label="1"];}'],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";}',
+        'digraph tree {    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440a60" -> "0x1d90c4408b0";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";}',
+        'digraph tree {    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "A16" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";}',
+        'digraph tree {    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "T18" [label=T1];    "A16" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";}',
+        'digraph tree {    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "T18" [label=T1];    "A16" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "T18" [label=T1];    "A16" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440910" [label="+"];}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "A16" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440910" [label="+"];    "0x1d90c440970" [label="2"];}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440910" [label="+"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "A115" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440910" [label="+"];    "0x1d90c440c40" [label="P"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440c40" -> "0x1d90c440be0";    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "T117" [label=T1];    "A115" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440910" [label="+"];    "0x1d90c440d30" [label="F"];    "0x1d90c440c40" [label="P"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440d30" -> "0x1d90c440c40";    "0x1d90c440c40" -> "0x1d90c440be0";    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "T117" [label=T1];    "A115" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];}',
+        'digraph tree {    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440910" [label="+"];    "0x1d90c440ca0" [label="T"];    "0x1d90c440d30" [label="F"];    "0x1d90c440c40" [label="P"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440ca0" -> "0x1d90c440d30";    "0x1d90c440d30" -> "0x1d90c440c40";    "0x1d90c440c40" -> "0x1d90c440be0";    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "T117" [label=T1];    "A115" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];}',
+        'digraph tree {    "0x1d90c440d60" [label="Ar"];    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440910" [label="+"];    "0x1d90c440ca0" [label="T"];    "0x1d90c440d30" [label="F"];    "0x1d90c440c40" [label="P"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440d60" -> "0x1d90c440b20";    "0x1d90c440d60" -> "0x1d90c440910";    "0x1d90c440d60" -> "0x1d90c440ca0";    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440ca0" -> "0x1d90c440d30";    "0x1d90c440d30" -> "0x1d90c440c40";    "0x1d90c440c40" -> "0x1d90c440be0";    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "number20" [label=< int:2 >];    "T117" [label=T1];    "A115" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";    "L19" -> "number20";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];"8a2e24f490b34d90a5c6985b2887dd9b" [label=< int:2 >];}',
+        'digraph tree {    "0x1d90c440dc0" [label="C"];    "0x1d90c440d60" [label="Ar"];    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440910" [label="+"];    "0x1d90c440ca0" [label="T"];    "0x1d90c440d30" [label="F"];    "0x1d90c440c40" [label="P"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440dc0" -> "0x1d90c440d60";    "0x1d90c440d60" -> "0x1d90c440b20";    "0x1d90c440d60" -> "0x1d90c440910";    "0x1d90c440d60" -> "0x1d90c440ca0";    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440ca0" -> "0x1d90c440d30";    "0x1d90c440d30" -> "0x1d90c440c40";    "0x1d90c440c40" -> "0x1d90c440be0";    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
       [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "number20" [label=< int:2 >];    "T117" [label=T1];    "e21" [label=e];    "A115" [label=A1];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";    "L19" -> "number20";    "T117" -> "e21";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];"8a2e24f490b34d90a5c6985b2887dd9b" [label=< int:2 >];}',
-      ],
-      [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "number20" [label=< int:2 >];    "T117" [label=T1];    "e21" [label=e];    "A115" [label=A1];    "e22" [label=e];    "C14" [label=C1];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";    "L19" -> "number20";    "T117" -> "e21";    "A115" -> "e22";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];"8a2e24f490b34d90a5c6985b2887dd9b" [label=< int:2 >];"3a78248383e34ef785660b32b6ea15f0" [label=< + >];"3a78248383e34ef785660b32b6ea15f0" -> "8a2e24f490b34d90a5c6985b2887dd9b";"3a78248383e34ef785660b32b6ea15f0" -> "f1f5c75c392644859119fda37509e10f";}',
-      ],
-      [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "number20" [label=< int:2 >];    "T117" [label=T1];    "e21" [label=e];    "A115" [label=A1];    "e22" [label=e];    "C14" [label=C1];    "e23" [label=e];    "E12" [label=E1];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";    "L19" -> "number20";    "T117" -> "e21";    "A115" -> "e22";    "C14" -> "e23";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];"8a2e24f490b34d90a5c6985b2887dd9b" [label=< int:2 >];"3a78248383e34ef785660b32b6ea15f0" [label=< + >];"3a78248383e34ef785660b32b6ea15f0" -> "8a2e24f490b34d90a5c6985b2887dd9b";"3a78248383e34ef785660b32b6ea15f0" -> "f1f5c75c392644859119fda37509e10f";}',
-      ],
-      [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "number20" [label=< int:2 >];    "T117" [label=T1];    "e21" [label=e];    "A115" [label=A1];    "e22" [label=e];    "C14" [label=C1];    "e23" [label=e];    "E12" [label=E1];    "e24" [label=e];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";    "L19" -> "number20";    "T117" -> "e21";    "A115" -> "e22";    "C14" -> "e23";    "E12" -> "e24";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];"8a2e24f490b34d90a5c6985b2887dd9b" [label=< int:2 >];"3a78248383e34ef785660b32b6ea15f0" [label=< + >];"3a78248383e34ef785660b32b6ea15f0" -> "8a2e24f490b34d90a5c6985b2887dd9b";"3a78248383e34ef785660b32b6ea15f0" -> "f1f5c75c392644859119fda37509e10f";}',
-      ],
-      [
-        'digraph tree {    "E0" [label=E];    "C1" [label=C];    "A3" [label=A];    "T5" [label=T];    "F7" [label=F];    "P9" [label=P];    "L10" [label=L];    "number11" [label=< int:1 >];    "T18" [label=T1];    "e12" [label=e];    "A16" [label=A1];    "+/-13" [label=< + >];    "T14" [label=T];    "F16" [label=F];    "P18" [label=P];    "L19" [label=L];    "number20" [label=< int:2 >];    "T117" [label=T1];    "e21" [label=e];    "A115" [label=A1];    "e22" [label=e];    "C14" [label=C1];    "e23" [label=e];    "E12" [label=E1];    "e24" [label=e];    "E0" -> "C1";    "E0" -> "E12";    "C1" -> "A3";    "C1" -> "C14";    "A3" -> "T5";    "A3" -> "A16";    "T5" -> "F7";    "T5" -> "T18";    "F7" -> "P9";    "P9" -> "L10";    "L10" -> "number11";    "T18" -> "e12";    "A16" -> "+/-13";    "A16" -> "T14";    "A16" -> "A115";    "T14" -> "F16";    "T14" -> "T117";    "F16" -> "P18";    "P18" -> "L19";    "L19" -> "number20";    "T117" -> "e21";    "A115" -> "e22";    "C14" -> "e23";    "E12" -> "e24";"f1f5c75c392644859119fda37509e10f" [label=< int:1 >];"8a2e24f490b34d90a5c6985b2887dd9b" [label=< int:2 >];"3a78248383e34ef785660b32b6ea15f0" [label=< + >];"3a78248383e34ef785660b32b6ea15f0" -> "8a2e24f490b34d90a5c6985b2887dd9b";"3a78248383e34ef785660b32b6ea15f0" -> "f1f5c75c392644859119fda37509e10f";}',
+        'digraph tree {    "0x1d90c440e20" [label="E"];    "0x1d90c440dc0" [label="C"];    "0x1d90c440d60" [label="Ar"];    "0x1d90c440b20" [label="Ar"];    "0x1d90c440b50" [label="T"];    "0x1d90c440af0" [label="F"];    "0x1d90c440ac0" [label="P"];    "0x1d90c440a60" [label="A"];    "0x1d90c4408b0" [label="1"];    "0x1d90c440910" [label="+"];    "0x1d90c440ca0" [label="T"];    "0x1d90c440d30" [label="F"];    "0x1d90c440c40" [label="P"];    "0x1d90c440be0" [label="A"];    "0x1d90c440970" [label="2"];    "0x1d90c440e20" -> "0x1d90c440dc0";    "0x1d90c440dc0" -> "0x1d90c440d60";    "0x1d90c440d60" -> "0x1d90c440b20";    "0x1d90c440d60" -> "0x1d90c440910";    "0x1d90c440d60" -> "0x1d90c440ca0";    "0x1d90c440b20" -> "0x1d90c440b50";    "0x1d90c440b50" -> "0x1d90c440af0";    "0x1d90c440af0" -> "0x1d90c440ac0";    "0x1d90c440ac0" -> "0x1d90c440a60";    "0x1d90c440a60" -> "0x1d90c4408b0";    "0x1d90c440ca0" -> "0x1d90c440d30";    "0x1d90c440d30" -> "0x1d90c440c40";    "0x1d90c440c40" -> "0x1d90c440be0";    "0x1d90c440be0" -> "0x1d90c440970";}',
       ],
     ];
   </script>

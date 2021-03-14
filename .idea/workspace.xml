@@ -5,14 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Pipfile.lock" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_2_24_2021_12_54_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_2_24_2021_12_54_PM__Default_Changelist_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/token.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/viz2.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz2.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +61,28 @@
       <recent name="D:\GeeK\ComViZ_2.0\compiler\Compiler" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.parsing_table">
+  <component name="RunManager" selected="Python.shell">
+    <configuration name="bottom_up_parser" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="ComViZ_2.0" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="jsonPython" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="ComViZ_2.0" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -70,6 +96,27 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/jsonPython.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="lexer" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="ComViZ_2.0" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -120,7 +167,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="shell" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="shell" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="ComViZ_2.0" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -143,9 +190,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.lexer" />
+        <item itemvalue="Python.bottom_up_parser" />
         <item itemvalue="Python.parsing_table" />
         <item itemvalue="Python.node_classes" />
-        <item itemvalue="Python.shell" />
         <item itemvalue="Python.jsonPython" />
       </list>
     </recent_temporary>
@@ -180,11 +228,6 @@
           <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>
           <line>122</line>
           <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py</url>
-          <line>3229</line>
-          <option name="timeStamp" value="12" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

@@ -1,3 +1,5 @@
+
+
 class PTEntry:
     """
         For shift move :
@@ -68,9 +70,3 @@ class NonTerminal:
     def __repr__(self):
         return f'{self.node_val}'
 
-
-# print(PTEntry(move="Shift", value=29),
-#       PTEntry(move="Reduce", value=Production(lhs=NonTerminal("C"), rhs=[NonTerminal("Ar")])),
-#       PTEntry(move='Goto', value=92),
-#       PTEntry(move="Accept", value=None),
-#       )

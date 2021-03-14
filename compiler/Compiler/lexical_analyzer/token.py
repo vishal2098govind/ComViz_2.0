@@ -2,9 +2,10 @@ import json
 
 
 class Token:
-    def __init__(self, type_, value=None, position_start=None, position_end=None):
+    def __init__(self, parser_type, type_, value=None, position_start=None, position_end=None):
         self.type = type_
         self.value = value
+        self.parser_type = parser_type
 
         if position_start:
             self.position_start = position_start.copy_position()

@@ -41,7 +41,6 @@
 #    -> ( E )
 
 from anytree import AnyNode
-
 from Compiler.error_handler.invalid_syntax_error import InvalidSyntaxError
 from Compiler.lexical_analyzer.constants import *
 from Compiler.syntax_analyzer.nodes import *
@@ -99,14 +98,14 @@ class Parser:
             self.ast_trace.append(num_node)
             visualize_ast(num_node)
 
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row = 'L', col = token.type)
 
             parse_result.register(self.advance_token())
             return parse_result.success(node=NumberNode(number_token=token))
 
         # L -> ID
         if token.type == TT_IDENTIFIER:
-            terminal_id_node = AnyNode(type="PT", id='ID' + str(len(self.trace)), name='ID', parent=caller)
+            terminal_id_node = AnyNode(type="PT", id='ID' + str(len(self.trace)), name='id', parent=caller)
             self.trace.append(terminal_id_node)
 
             parse_result.register(self.advance_token())
@@ -114,7 +113,7 @@ class Parser:
             var_node = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
             self.ast_trace.append(var_node)
             visualize_ast(var_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row= 'L', col='id')
 
             return parse_result.success(node=VariableAccessNode(var_name_token=token))
 
@@ -129,7 +128,7 @@ class Parser:
             terminal_node = AnyNode(type="PT", id=')' + str(len(self.trace)), name='<)>', parent=caller)
             self.trace.append(terminal_node)
 
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='L', col='(')
 
             parse_result.register(self.advance_token())
 
@@ -150,7 +149,7 @@ class Parser:
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
-                                                                 error_details='Expected int or float or ID or (, '
+                                                                 error_details='Expected int or float or id or (, '
                                                                                f'found {token}'))
 
     # P -> L ^ P | L ( LL(2) )
@@ -171,7 +170,7 @@ class Parser:
 
                 non_terminal_p_node = AnyNode(type="PT", id='P' + str(len(self.trace)), name='P', parent=caller)
                 self.trace.append(non_terminal_p_node)
-                visualize_parse_tree(self.trace)
+                visualize_parse_tree(self.trace, row='P^', col=token.type)
 
                 a_node = parse_result.register(parse_result=self.leaf(caller=non_terminal_a_node))
                 if parse_result.error:
@@ -197,7 +196,7 @@ class Parser:
             # P -> L
             non_terminal_a_node = AnyNode(type="PT", id='L' + str(len(self.trace)), name='L', parent=caller)
             self.trace.append(non_terminal_a_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='P', col=token.type)
 
             a_node = parse_result.register(parse_result=self.leaf(caller=non_terminal_a_node))
             if parse_result.error:
@@ -214,7 +213,7 @@ class Parser:
             elif token.type not in (TT_INT, TT_FLOAT, TT_LPAREN, TT_IDENTIFIER):
                 return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                      position_end=token.position_end,
-                                                                     error_details=f'Expected int or float or ( or ID, '
+                                                                     error_details=f'Expected int or float or ( or id, '
                                                                                    f'found {token}'))
 
     # F -> + P | - P | P
@@ -228,9 +227,9 @@ class Parser:
             terminal_node = AnyNode(type="PT", id='+' + str(len(self.trace)), name=f'< {token.type} >', parent=caller)
             self.trace.append(terminal_node)
 
-            non_terminal_f_node = AnyNode(type="PT", id='F' + str(len(self.trace)), name='F', parent=caller)
+            non_terminal_f_node = AnyNode(type="PT", id='F' + str(len(self.trace)), name='P', parent=caller)
             self.trace.append(non_terminal_f_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='F', col=token.type)
 
             parse_result.register(self.advance_token())
 
@@ -250,7 +249,7 @@ class Parser:
         elif token.type in (TT_LPAREN, TT_INT, TT_FLOAT, TT_IDENTIFIER):
             non_terminal_p_node = AnyNode(type="PT", id='P' + str(len(self.trace)), name='P', parent=caller)
             self.trace.append(non_terminal_p_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='F', col=token.type)
 
             p_node = parse_result.register(parse_result=self.power(caller=non_terminal_p_node))
             if parse_result.error:
@@ -263,7 +262,7 @@ class Parser:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected token of type int or float '
-                                                                               'or + or - or ( or ID, '
+                                                                               'or + or - or ( or id, '
                                                                                f'found {token}'))
 
     # T1 -> * F T1 | / F T1 | e
@@ -282,7 +281,7 @@ class Parser:
 
             non_terminal_t1_node = AnyNode(type="PT", id='T1' + str(len(self.trace)), name='T1', parent=caller)
             self.trace.append(non_terminal_t1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='T1', col=operator_token.type)
 
             parse_result.register(self.advance_token())
 
@@ -312,10 +311,10 @@ class Parser:
 
         # T1 -> e
         elif operator_token.type in (TT_PLUS, TT_MINUS, TT_EOF, TT_RPAREN, TT_LT, TT_GT, TT_LTE, TT_GTE, TT_NE, TT_EE) \
-                or (operator_token.type == TT_KEYWORD and operator_token.value in ('AND', 'OR')):
+                or (operator_token.type == TT_KEYWORD and operator_token.value in ('and', 'or')):
             terminal_e_node = AnyNode(type="PT", id='e' + str(len(self.trace)), name='e', parent=caller)
             self.trace.append(terminal_e_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='T1', col=operator_token.type)
 
             return parse_result.success(node=left_child)
 
@@ -339,7 +338,7 @@ class Parser:
 
             non_terminal_t1_node = AnyNode(type="PT", id='T1' + str(len(self.trace)), name='T1', parent=caller)
             self.trace.append(non_terminal_t1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='T', col=self.current_token.type)
 
             f_node = parse_result.register(parse_result=self.factor(caller=non_terminal_f_node))
 
@@ -358,7 +357,7 @@ class Parser:
             return parse_result.failure(error=InvalidSyntaxError(position_start=self.current_token.position_start,
                                                                  position_end=self.current_token.position_end,
                                                                  error_details=f'Expected int or float or + or - or '
-                                                                               f'( or ID '
+                                                                               f'( or id '
                                                                                f'found {self.current_token}'))
 
     # A1 -> + T A1 | - T A1 | e
@@ -378,7 +377,7 @@ class Parser:
 
             non_terminal_ae1_node = AnyNode(type="PT", id='A1' + str(len(self.trace)), name='A1', parent=caller)
             self.trace.append(non_terminal_ae1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='A1', col=operator_token.type)
 
             parse_result.register(self.advance_token())
 
@@ -409,11 +408,11 @@ class Parser:
 
         # A1 -> e
         elif operator_token.type in (TT_EOF, TT_RPAREN, TT_LT, TT_GT, TT_GTE, TT_LTE, TT_NE, TT_EE) or \
-                (operator_token.type == TT_KEYWORD and operator_token.value in ('AND', 'OR')):
+                (operator_token.type == TT_KEYWORD and operator_token.value in ('and', 'or')):
             terminal_e_node = AnyNode(type="PT", id='e' + str(len(self.trace)), name='e', parent=caller)
             self.trace.append(terminal_e_node)
 
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='A1', col=operator_token.type)
             return parse_result.success(node=left_child)
 
         else:
@@ -434,7 +433,7 @@ class Parser:
 
             non_terminal_a1_node = AnyNode(type="PT", id='A1' + str(len(self.trace)), name='A1', parent=caller)
             self.trace.append(non_terminal_a1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='A', col=token.type)
 
             t_node = parse_result.register(parse_result=self.term(caller=non_terminal_t_node))
             if parse_result.error:
@@ -451,7 +450,7 @@ class Parser:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected int or float or + or - or ( '
-                                                                               f'or ID, found {token}'))
+                                                                               f'or id, found {token}'))
 
     # C1 -> < A C1 | <= A C1 | > A C1 | >= A C1 | == A C1 | != A C1 | e
     def comparison_expression_1(self, left_child, caller):
@@ -469,7 +468,7 @@ class Parser:
 
             non_terminal_c1_node = AnyNode(type="PT", id='C1' + str(len(self.trace)), name='C1', parent=caller)
             self.trace.append(non_terminal_c1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='C1', col=token.type)
 
             parse_result.register(self.advance_token())
 
@@ -493,10 +492,10 @@ class Parser:
             return parse_result.success(node=c1_node)
 
         # C1 -> e
-        elif token.type in (TT_RPAREN, TT_EOF) or (token.type == TT_KEYWORD and token.value in ('AND', 'OR')):
+        elif token.type in (TT_RPAREN, TT_EOF) or (token.type == TT_KEYWORD and token.value in ('and', 'or')):
             terminal_e_node = AnyNode(type="PT", id='e' + str(len(self.trace)), name='e', parent=caller)
             self.trace.append(terminal_e_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='C1', col=token.type)
 
             return parse_result.success(node=left_child)
 
@@ -504,7 +503,7 @@ class Parser:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected < or <= or > or >= or == or '
-                                                                               '!= or ) or EOF or AND or OR, '
+                                                                               '!= or ) or EOF or and or "or", '
                                                                                f'found {token}'))
 
     # C -> NOT C | A C1
@@ -513,13 +512,13 @@ class Parser:
         token = self.current_token
 
         # C -> NOT C
-        if token.type == TT_KEYWORD and token.value == 'NOT':
-            terminal_not_node = AnyNode(type="PT", id='NOT' + str(len(self.trace)), name='NOT', parent=caller)
+        if token.type == TT_KEYWORD and token.value == 'not':
+            terminal_not_node = AnyNode(type="PT", id='NOT' + str(len(self.trace)), name='not', parent=caller)
             self.trace.append(terminal_not_node)
 
             non_terminal_c_node = AnyNode(type="PT", id='C' + str(len(self.trace)), name='C', parent=caller)
             self.trace.append(terminal_not_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='C', col=token.type)
 
             parse_result.register(self.advance_token())
 
@@ -541,7 +540,7 @@ class Parser:
 
             non_terminal_c1_node = AnyNode(type="PT", id='C1' + str(len(self.trace)), name='C1', parent=caller)
             self.trace.append(non_terminal_c1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='C', col=token.type)
 
             a_node = parse_result.register(parse_result=self.arith_expression(caller=non_terminal_a_node))
             if parse_result.error:
@@ -557,8 +556,8 @@ class Parser:
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
-                                                                 error_details='Expected NOT or int or float or + or '
-                                                                               f'- or ( or ID, found {token}'))
+                                                                 error_details='Expected not or int or float or + or '
+                                                                               f'- or ( or id, found {token}'))
 
     # E1 -> AND C E1 | OR C E1 | e
     def expression_1(self, left_child, caller):
@@ -566,7 +565,7 @@ class Parser:
         token = self.current_token
 
         # E1 -> AND C E1 | OR C E1
-        if token.type == TT_KEYWORD and token.value in ('AND', 'OR'):
+        if token.type == TT_KEYWORD and token.value in ('and', 'or'):
             terminal_logical_node = AnyNode(type="PT", id=token.value + str(len(self.trace)), name=token.value,
                                             parent=caller)
             self.trace.append(terminal_logical_node)
@@ -576,7 +575,7 @@ class Parser:
 
             non_terminal_e1_node = AnyNode(type="PT", id='E1' + str(len(self.trace)), name='E1', parent=caller)
             self.trace.append(non_terminal_e1_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='E1', col=token.value)
 
             parse_result.register(parse_result=self.advance_token())
 
@@ -605,14 +604,14 @@ class Parser:
         elif token.type in (TT_RPAREN, TT_EOF):
             terminal_e_node = AnyNode(type="PT", id='e' + str(len(self.trace)), name='e', parent=caller)
             self.trace.append(terminal_e_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='E1', col=token.type)
 
             return parse_result.success(node=left_child)
 
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
-                                                                 error_details='Expected AND or OR or ) or EOF, '
+                                                                 error_details='Expected and or "or" or ) or EOF, '
                                                                                f'found {token}'))
 
     # E -> C E1 | VAR ID EQ E
@@ -620,14 +619,15 @@ class Parser:
         parse_result = ParseResult()
 
         # E -> C E1
-        if self.current_token.type in (TT_INT, TT_FLOAT, TT_PLUS, TT_MINUS, TT_LPAREN, TT_IDENTIFIER):
+        if self.current_token.type in (TT_INT, TT_FLOAT, TT_PLUS, TT_MINUS, TT_LPAREN, TT_IDENTIFIER) or \
+                (self.current_token.type == TT_KEYWORD and self.current_token.value == 'not'):
             non_terminal_c_node = AnyNode(type="PT", id='C' + str(len(self.trace)), name='C', parent=caller)
             self.trace.append(non_terminal_c_node)
 
             non_terminal_e1_node = AnyNode(type="PT", id='E1' + str(len(self.trace)), name='E1', parent=caller)
             self.trace.append(non_terminal_e1_node)
 
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='E', col=self.current_token.type)
 
             c_node = parse_result.register(parse_result=self.comparison_expression(caller=non_terminal_c_node))
 
@@ -642,11 +642,11 @@ class Parser:
                 return parse_result.success(node=e1_node)
 
         # E -> VAR ID EQ E
-        elif self.current_token.type == TT_KEYWORD and self.current_token.value == 'VAR':
-            terminal_var_node = AnyNode(type="PT", id='VAR' + str(len(self.trace)), name='VAR', parent=caller)
+        elif self.current_token.type == TT_KEYWORD and self.current_token.value == 'var':
+            terminal_var_node = AnyNode(type="PT", id='VAR' + str(len(self.trace)), name='var', parent=caller)
             self.trace.append(terminal_var_node)
 
-            terminal_id_node = AnyNode(type="PT", id='ID' + str(len(self.trace)), name='ID', parent=caller)
+            terminal_id_node = AnyNode(type="PT", id='ID' + str(len(self.trace)), name='id', parent=caller)
             self.trace.append(terminal_id_node)
 
             terminal_eq_node = AnyNode(type="PT", id='EQ' + str(len(self.trace)), name='< = >', parent=caller)
@@ -654,7 +654,7 @@ class Parser:
 
             non_terminal_e_node = AnyNode(type="PT", id='E' + str(len(self.trace)), name='E', parent=caller)
             self.trace.append(non_terminal_e_node)
-            visualize_parse_tree(self.trace)
+            visualize_parse_tree(self.trace, row='E', col=self.current_token.value)
 
             parse_result.register(self.advance_token())
             if self.current_token.type == TT_IDENTIFIER:
@@ -665,7 +665,6 @@ class Parser:
                                name=variable_name_token.value)
                 self.ast_trace.append(left)
                 visualize_ast(left)
-                visualize_parse_tree(self.trace)
 
                 if self.current_token.type == TT_EQ:
                     parse_result.register(self.advance_token())
@@ -700,5 +699,5 @@ class Parser:
             return parse_result.failure(error=InvalidSyntaxError(position_start=self.current_token.position_start,
                                                                  position_end=self.current_token.position_end,
                                                                  error_details=f'Expected int or float or + or - or '
-                                                                               f'VAR or or ID or ( or NOT'
+                                                                               f'var or or id or ( or not'
                                                                                f'found {self.current_token}'))

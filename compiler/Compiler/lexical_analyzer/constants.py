@@ -10,7 +10,7 @@ TT_LPAREN = '('
 TT_RPAREN = ')'
 TT_POWER = '^'
 TT_KEYWORD = 'KEYWORD'
-TT_IDENTIFIER = 'ID'
+TT_IDENTIFIER = 'id'
 TT_EQ = ' EQ '
 TT_EE = 'EE'
 TT_NE = 'NE'
@@ -25,8 +25,8 @@ DIGITS = '012345689'
 LETTERS_DIGITS = LETTERS+DIGITS
 
 KEYWORDS = [
-    'VAR',
-    'AND',
-    'OR',
-    'NOT'
+    'var',
+    'and',
+    'or',
+    'not'
 ]

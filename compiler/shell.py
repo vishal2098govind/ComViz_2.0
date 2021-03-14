@@ -1,7 +1,9 @@
+import json
+
 from Compiler.run import run, global_symbol_table
 from Visualizer.visualize_pt import pt_digraphs
-
-import json
+from Compiler.syntax_analyzer.bottom_up_parser import bottom_up_parse
+from Compiler.syntax_analyzer.parsing_table import ParsingTable
 
 response = {
     "tokens": None,
@@ -14,7 +16,7 @@ response = {
 }
 
 result = {
-    "status" : "",
+    "status": "",
     "data": None
 }
 
@@ -37,6 +39,9 @@ def comviz(source_code):
             tokens.append(token.__repr__())
         response["tokens"] = tokens
 
+        print("Bottom Up Parser")
+        bottom_up_parse(lexer_result, ParsingTable())
+
         if syntax_errors:
             print(syntax_errors.as_string())
             response["syntax_errors"] = syntax_errors.as_string()
@@ -58,7 +63,8 @@ def comviz(source_code):
                 # No runtime errors
                 response["evaluation_result"] = eval_result.__repr__()
                 response["symbol_table"] = global_symbol_table.__repr__()
-                # print(json.dumps(response, indent=4))
+                print(json.dumps(response, indent=4))
+                print(eval_result)
 
                 result['status'] = 'success'
                 result['data'] = response
@@ -66,4 +72,4 @@ def comviz(source_code):
     return result
 
 
-comviz("VAR a = 1+2")
+# comviz("1+2")
