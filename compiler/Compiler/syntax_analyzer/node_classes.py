@@ -46,7 +46,7 @@ class Production:
 
 class Error:
 
-    def __init__(self, msg="Error"):
+    def __init__(self, msg="Invalid Syntax"):
         self.msg = msg
 
     def __repr__(self):

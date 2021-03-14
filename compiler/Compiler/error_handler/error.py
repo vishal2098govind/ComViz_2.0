@@ -7,6 +7,4 @@ class Error:
 
     def as_string(self):
         error_string = f'{self.error_name}: {self.error_details}'
-        error_string += f'\nFile {self.position_start.file_name}, line {self.position_start.line_no+1}, ' \
-                        f'col {self.position_start.col_no+1}'
         return error_string

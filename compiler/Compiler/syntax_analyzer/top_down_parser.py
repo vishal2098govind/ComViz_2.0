@@ -272,8 +272,8 @@ class Parser:
 
         # T1 -> * F T1 | / F T1
         if operator_token.type in (TT_MUL, TT_DIV):
-            terminal_node = AnyNode(type="PT", id='*//' + str(len(self.trace)), name=operator_token.type,
-                                    parent=caller)
+            terminal_node = AnyNode(type="PT", id='*//' + str(len(self.trace)), name='<*>' if
+            operator_token.type==TT_MUL else '<+>',parent=caller)
             self.trace.append(terminal_node)
 
             non_terminal_f_node = AnyNode(type="PT", id='F' + str(len(self.trace)), name='F', parent=caller)
@@ -292,7 +292,7 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=operator_token.type)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name='<*>' if operator_token.type == TT_MUL else '<+>')
             right.parent = root
             left.parent = root
             self.ast_trace.append(root)

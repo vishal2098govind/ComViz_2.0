@@ -6,6 +6,8 @@ class SymbolTable:
         }
 
     def get_var_value(self, var_name):
+        if var_name not in self.symbols_map["var"]:
+            return None
         value = self.symbols_map["var_value"][self.symbols_map["var"].index(var_name)]
 
         return value
