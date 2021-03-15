@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/viz.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz.html" afterDir="false" />
-    </list>
+    <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
