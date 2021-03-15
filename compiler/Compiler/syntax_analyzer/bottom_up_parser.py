@@ -238,7 +238,7 @@ class BUParser:
                 ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[1].value, value=-1 * pt_children[1].value,
                                    children=pt_children[1].ast_children)
                 visualize_bottom_up_ast(ast_node)
-                return -1 * pt_children[1].value, (ast_node)
+                return -1 * pt_children[1].value, (ast_node,)
             ast_node = AnyNode(id=uuid.uuid4(), value=pt_children[1].value, name=pt_children[1].value,
                                children=pt_children[1].ast_children)
             visualize_bottom_up_ast(ast_node)

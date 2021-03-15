@@ -76,7 +76,7 @@ class EvaluateAST:
 
         if error:
             return runtime_result.failure(error=error)
-
+        print(result)
         return runtime_result.success(result.set_position(pos_start=node.pos_start, pos_end=node.pos_end))
 
     def evaluate_UnaryOperationNode(self, node, context):

@@ -26,13 +26,14 @@ def visualize_parse_tree(trace, row=None, col=None):
         test.append([dgi])
         # print(test)
         # print('----------------------------')
-        pt_digraphs.append({
-            'digraph': [dgi],
-            'index': {
-                'row': row,
-                'col': col
-            }
-        })
+        # pt_digraphs.append({
+        #     'digraph': [dgi],
+        #     'index': {
+        #         'row': row,
+        #         'col': col
+        #     }
+        # })
+        pt_digraphs.append([dgi])
 
 
 bupt_digraphs = []

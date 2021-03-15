@@ -56,6 +56,7 @@ def comviz(source_code):
         if syntax_errors:
             print(syntax_errors.as_string())
             response["top_down_syntax_errors"] = syntax_errors.as_string()
+            response["top_down_digraphs"] = pt_digraphs
 
             result['status'] = 'error'
             result['data'] = response
@@ -85,4 +86,4 @@ def comviz(source_code):
 
 # comviz("TRUE")
 # comviz("a")
-# comviz("1==2")
+# comviz("(2^3)^2")
