@@ -87,3 +87,4 @@ def comviz(source_code):
 # comviz("TRUE")
 # comviz("a")
 # comviz("(2^3)^2")
+comviz("a >= 2")
