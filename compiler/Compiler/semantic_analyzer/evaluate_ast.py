@@ -68,15 +68,15 @@ class EvaluateAST:
         elif node.operator_token.type == TT_NE:
             result, error = left_node.get_comparison_ne(right_node)
 
-        elif node.operator_token.type == TT_KEYWORD and node.operator_token.value == 'AND':
+        elif node.operator_token.type == TT_KEYWORD and node.operator_token.value == 'and':
             result, error = left_node.anded_by(right_node)
 
-        elif node.operator_token.type == TT_KEYWORD and node.operator_token.value == 'OR':
+        elif node.operator_token.type == TT_KEYWORD and node.operator_token.value == 'or':
             result, error = left_node.ored_by(right_node)
 
         if error:
             return runtime_result.failure(error=error)
-
+        print(result)
         return runtime_result.success(result.set_position(pos_start=node.pos_start, pos_end=node.pos_end))
 
     def evaluate_UnaryOperationNode(self, node, context):
@@ -88,7 +88,7 @@ class EvaluateAST:
         error = None
         if node.operator_token.type == TT_MINUS:
             number, error = number.mul_to(Number(number_value=-1))
-        elif node.op_token.type == TT_KEYWORD and node.op_token.value == 'NOT':
+        elif node.operator_token.type == TT_KEYWORD and node.operator_token.value == 'not':
             number, error = number.notted()
         if error:
             return runtime_result.failure(error=error)
