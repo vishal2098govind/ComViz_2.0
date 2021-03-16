@@ -5,7 +5,7 @@ import { Backdrop } from '@material-ui/core'
 
 
 
-function Table({ columns, data }) {
+function Table({ columns, data, props }) {
   const {
     getTableProps,
     getTableBodyProps,
@@ -34,9 +34,8 @@ function Table({ columns, data }) {
           return (
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => {
-                console.log(cell)
-                if(cell.column.Header=='+' && cell.row.values.terminal=='E'){
-                  return <td style={{background:'red'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                if(cell.column.Header==props.terminal && cell.row.values.terminal==props.nonTerminal){
+                  return <td style={{background:'white'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }else{
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }
@@ -67,16 +66,16 @@ function ReactTable(props) {
             '+' : 'C E1',
             '-' : 'C E1',
             '(' : 'C E1',
-            'VAR' : 'VAR ID=E',
-            'ID' : 'C E1',
-            'NOT' : 'C E1'
+            'var' : 'var id=E',
+            'id' : 'C E1',
+            'not' : 'C E1'
         },
         {  
             terminal: 'E1',
             ')' : 'e',
             'EOF' : 'e',
-            'AND' : 'AND CE1',
-            'OR' : 'OR CE1'
+            'and' : 'and CE1',
+            'or' : 'or CE1'
         },
         {  
             terminal: 'T',
@@ -95,8 +94,8 @@ function ReactTable(props) {
             '/' : '/ FT1',
             ')' : 'e',
             'EOF' : 'e',
-            'AND' : 'e',
-            'OR' : 'e',
+            'and' : 'e',
+            'or' : 'e',
             '<' : 'e',
             '<=' : 'e',
             '>' : 'e',
@@ -111,27 +110,28 @@ function ReactTable(props) {
             '+' : '+P',
             '-' : '-P',
             '(' : 'P',
-            'ID' : 'P'
+            'id' : 'P'
         },
         {  
             terminal: 'P^',
             int: 'L ^ P',
             float: 'L ^ P',
             '(' : 'L ^ P',
-            'ID' : 'L ^ P'
+            'id' : 'L ^ P'
         },
         {  
             terminal: 'P',
             int: 'L',
             float: 'L',
             '(' : 'L',
-            'ID' : 'L'
+            'id' : 'L'
         },
         {  
             terminal: 'L',
             int: 'int',
             float: 'float',
-            '(' : '(E)'
+            '(' : '(E)',
+            id : 'id'
         },
         {  
             terminal: 'A1',
@@ -139,8 +139,8 @@ function ReactTable(props) {
             '-' : '- TA1',
             ')' : 'e',
             'EOF' : 'e',
-            'AND' : 'e',
-            'OR' : 'e',
+            'and' : 'e',
+            'or' : 'e',
             '<' : 'e',
             '<=' : 'e',
             '>' : 'e',
@@ -157,9 +157,9 @@ function ReactTable(props) {
             '(' : 'T A1',
             ')' : 'e',
             'EOF' : 'e',
-            'ID' : 'T A1',
-            'AND' : 'e',
-            'OR' : 'e',
+            'id' : 'T A1',
+            'and' : 'e',
+            'or' : 'e',
             '<' : 'e',
             '<=' : 'e',
             '>' : 'e',
@@ -171,8 +171,8 @@ function ReactTable(props) {
             terminal: 'C1',
             ')' : 'e',
             'EOF' : 'e',
-            'AND' : 'e',
-            'OR' : 'e',
+            'and' : 'e',
+            'or' : 'e',
             '<' : '< AC1',
             '<=' : '<= AC1',
             '>' : '> AC1',
@@ -187,15 +187,15 @@ function ReactTable(props) {
             '+' : 'A C1',
             '-' : 'A C1',
             '(' : 'A C1',
-            'ID' : 'A C1',
-            'NOT' : 'NOT C'
+            'id' : 'A C1',
+            'not' : 'not C'
         },
             ] 
         columns.push({
             Header: '',
             accessor: 'terminal'
         })
-        let colName=['int','float','+','EOF','=','*','/','^','(',')','VAR','ID','AND','OR','NOT','<','<=','>','>=','==','!=']
+        let colName=['int','float','+','EOF','=','*','/','^','(',')','var','id','and','or','not','<','<=','>','>=','==','!=']
         for(let i=0;i<21;i++){
             columns.push({
                 Header: colName[i],
@@ -259,7 +259,7 @@ function ReactTable(props) {
 
   return (
     <Styles>
-      <Table columns={columns} data={data} />
+      <Table columns={columns} data={data} props={props} />
     </Styles>
   )
 }

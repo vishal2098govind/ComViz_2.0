@@ -4,6 +4,7 @@ import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Grid,LinearProg
 import CustomizedTables from '../materialTable'
 import ReactTable from '../reactTable'
 import Graph from '../graph'
+import {useSelector} from 'react-redux'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -36,7 +37,9 @@ function Lexical() {
   const classes = useStyles();
 const [visualize,setVisualize]=useState(true)
 const [loading,setLoading]=useState(false)
-
+const tokenListData=useSelector(state=>state.tokens)
+const syData=useSelector(state=>state.symbolTable)
+console.log(syData)
 // let tokenListData=[{
 //   token:'< int: 1 >'
 // },{
@@ -51,7 +54,7 @@ const [loading,setLoading]=useState(false)
 //   Header: 'Token List',
 //   accessor: 'token'
 // }]
-let tokenListData=['< int: 1 >','< + >','< int: 2 >','< EOF >']
+// let tokenListData=['< int: 1 >','< + >','< int: 2 >','< EOF >']
 // let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
 let tokenListColumns=[]
 tokenListColumns.push({
@@ -85,7 +88,7 @@ tokenListData.forEach((col)=>{
 //   accessor: 'varVal'
 // }]
 
-let syData= {'var': ['NULL', 'TRUE', 'FALSE','age'], 'var_value': [0, 1, 0, 22]}
+// let syData= {'var': ['NULL', 'TRUE', 'FALSE','age'], 'var_value': [0, 1, 0, 22]}
 let symbolTableColumns=[]
 symbolTableColumns.push({
   Header :'Variable',

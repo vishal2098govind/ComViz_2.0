@@ -23,7 +23,7 @@ const useStyles = makeStyles((theme) => ({
 ))
 function App() {
   const classes = useStyles();
-const [visualize,setVisualize]=useState(true)
+const [visualize,setVisualize]=useState(false)
 const [loading,setLoading]=useState(false)
 const startVisualizer=()=>{
     setLoading(true)

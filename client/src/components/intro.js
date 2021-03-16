@@ -1,10 +1,14 @@
 
 import React,{useEffect, useState} from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Typography,TextField,Button } from '@material-ui/core';
+import { Typography,TextField,Button,CircularProgress } from '@material-ui/core';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
+import Axios from 'axios';
+import {useSelector,useDispatch} from 'react-redux';
+import {addCompilerData} from '../redux/ruleAction'
+
 const useStyles = makeStyles((theme) => ({
     root: {
         display: 'flex',
@@ -55,6 +59,35 @@ const useStyles = makeStyles((theme) => ({
 function Intro(props) {
 const classes = useStyles();
 const [start,setStart]=useState(false)
+const dispatch=useDispatch();
+const [compilerInput,setInput]=useState('')
+const [vizStatus,setVizStatus]=useState(false);
+const [codeStatus,setCodeStatus]=useState('RUN CODE');
+const [loading,setLoading]=useState(false)
+const callBackend=async()=>{
+  setLoading(true)
+  const form = new FormData();
+  form.append('source_code',compilerInput);
+  try{
+    const response = await Axios({
+      method: 'post',
+      url: 'http://localhost:8000/submit_code',
+      data: form,
+    });
+    dispatch(addCompilerData(response.data.data))
+    setLoading(false)
+    setVizStatus(true)
+    setCodeStatus('SUCCESS')
+  }catch{
+    setVizStatus(false)
+    setCodeStatus('FAILED')
+    setLoading(false)
+  }
+}
+
+const inputChange=(e)=>{
+  setInput(e.target.value)
+}
 const First=()=>{
     return(
         <div>
@@ -62,7 +95,7 @@ const First=()=>{
             <spam style={{color:'#FEFFFF'}}>COMPILER</spam> VISUALIZER
         </Typography>
         <Typography variant='h4' className={classes.simpleText}>
-        In computing, a compiler is a computer program that translates <br/> computer code written in one programming.<br/>
+        In computing, a compiler is a program that translates the code written in one language to <br/>some other language without changing the meaning of the program.<br/>
         </Typography>
         <Button
         variant="contained"
@@ -89,7 +122,10 @@ const Second=()=>{
           rows={5}
           placeholder="Write your code here.."
           variant="outlined"
+          value={compilerInput}
+          onChange={inputChange}
         />
+        
         <div >
         <Button
         variant="contained"
@@ -101,11 +137,13 @@ const Second=()=>{
       </Button>
         <Button
         variant="contained"
-        color="default"
+        // color={codeStatus=='NotStarted'? 'default': codeStatus=='Success' ? 'green' : 'red'}
+        style={{background:`${codeStatus=='RUN CODE'? '': codeStatus=='SUCCESS' ? 'green' : 'red'}`}}
         className={classes.button1}
         endIcon={<SettingsEthernetIcon />}
+        onClick={callBackend}
       >
-        RUN CODE
+        {loading ? <CircularProgress style={{height:'24px',width:'24px',margin:'0px 22px'}} /> : `${codeStatus}`}
       </Button>
       
         <Button
@@ -115,6 +153,7 @@ const Second=()=>{
         endIcon={<PlayCircleOutlineIcon />}
         style={{marginLeft:'190px'}}
         onClick={()=>{props.setVisualize(true)}}
+        disabled={!vizStatus}
       >
         VISUALIZE
       </Button>
@@ -141,7 +180,7 @@ const Second=()=>{
 }
   return (
     <div className={classes.root}>
-        { start ? <Second/> : <First/>}
+        { start ? Second() : First()}
     </div>
   );
 }

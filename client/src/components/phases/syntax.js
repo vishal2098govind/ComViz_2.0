@@ -1,11 +1,12 @@
 import React,{useEffect, useState} from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Grid,LinearProgress,Button,Paper} from '@material-ui/core'
+import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Grid,LinearProgress,Button,Paper,Select,MenuItem} from '@material-ui/core'
 import CustomizedTables from '../materialTable'
 import ReactTable from '../reactTable'
 import Graph from '../graph'
 import SkipNextIcon from '@material-ui/icons/SkipNext';
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
+import {useSelector} from 'react-redux'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -45,45 +46,21 @@ function Syntax() {
 const [visualize,setVisualize]=useState(true)
 const [loading,setLoading]=useState(false)
 const [step,setStep]=useState(0)
-let tokenListData=[{
-    tokenType:'Operators',
-    tokenList:' +, =, -, *, / '
-}, {tokenType:'Operators',
-tokenList:' +, =, -, *, / '
-},{tokenType:'Operators',
-tokenList:' +, =, -, *, / '
-}]
-
-let tokenListColumns=[{
-    Header: 'Token Type',
-    accessor: 'tokenType'
-},
-{
-    Header: 'Token List',
-    accessor: 'tokenList'
-}]
-
-let symbolTableData=[{
-  var:'NULL',
-  varVal:'0'
-}, {var:'TRUE',
-varVal:'1'
-},{var:'FALSE',
-varVal:'0'
-},{var:'a',
-varVal:'8'
-},{var:'b',
-varVal:'9'
-}]
-
-let symbolTableColumns=[{
-  Header: 'Variable',
-  accessor: 'var'
-},
-{
-  Header: 'Variable Value',
-  accessor: 'varVal'
-}]
+const [terminal,setTerminal]=useState('-')
+const [nonTerminal,setNonTerminal]=useState('x')
+const tokenListData=useSelector(state=>state.tokens)
+// let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
+let tokenListColumns=[]
+tokenListColumns.push({
+  Header: 'Token List',
+  accessor: 'tokenList'
+})
+tokenListData.forEach((col)=>{
+  tokenListColumns.push({
+    Header: col,
+    accessor: col
+  })
+})
 
 let grammarTableColumns=[{
   Header: 'Vertices',
@@ -194,7 +171,11 @@ let dummyData=[{
   int: '-> TA1'
 },
 ]
-
+const productionColor=(t,nt)=>{
+  setTerminal(t)
+  setNonTerminal(nt)
+  console.log('color')
+}
 const syntaxStep=()=>{
     // if(step<0){
     //   setStep(0)
@@ -230,15 +211,19 @@ const syntaxStep=()=>{
             <div>
                 <Grid container spacing={3}>
                    <Grid item md={7.2}>
-                     <div style={{marginTop:'40px'}}>
+                     <div style={{marginTop:'10px'}}>
                       <ReactTable 
                       size={'small'}
+                      terminal={terminal}
+                      nonTerminal={nonTerminal}
           />
+          <ReactTable columns={tokenListColumns}
+          inverted={true} type={'tokenList'} size={'small'}/>
                      </div>
                    
                    </Grid>
                    <Grid item md={4}>
-                      <Graph/>
+                      <Graph productionColor={productionColor}/>
                    </Grid>
                 </Grid>
                   
@@ -276,6 +261,24 @@ const title=[{
       >
         PREVIOUS STEP
     </Button>
+        <Button
+        variant="contained"
+        color="default"
+        className={classes.button1}
+      >
+        <Select
+          // labelId="demo-simple-select-filled-label"
+          // id="demo-simple-select-filled"
+          value={1}
+          defaultValue={1}
+          // onChange={handleChange}
+        >
+          <MenuItem value={1}>
+            Top-Down Parser
+          </MenuItem>
+          <MenuItem value={2}>Bottom-Up Parser</MenuItem>
+        </Select>
+      </Button>
     <Button
         variant="contained"
         color="default"
