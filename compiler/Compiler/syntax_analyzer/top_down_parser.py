@@ -466,8 +466,8 @@ class Parser:
 
         # C1 -> < A C1 | <= A C1 | > A C1 | >= A C1 | == A C1 | != A C1
         if token.type in (TT_LT, TT_GT, TT_GTE, TT_LTE, TT_NE, TT_EE):
-            terminal_comp_node = AnyNode(type="PT", id=token.type + str(len(self.trace)),
-                                         name=token.value, parent=caller)
+            terminal_comp_node = AnyNode(type="PT", id=uuid.uuid4(),
+                                         name=f'"{token.value}"', parent=caller)
             self.trace.append(terminal_comp_node)
 
             non_terminal_a_node = AnyNode(type="PT", id=uuid.uuid4(), name='A', parent=caller)
@@ -485,7 +485,7 @@ class Parser:
 
             right = self.ast_trace.pop()
             left = self.ast_trace.pop()
-            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=token.value)
+            root = AnyNode(type="AST", id=uuid.uuid4().hex, name=f'"{token.value}"')
             right.parent = root
             left.parent = root
             self.ast_trace.append(root)

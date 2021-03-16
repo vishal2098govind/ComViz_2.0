@@ -73,6 +73,8 @@ def comviz(source_code):
                 result['data'] = response
             else:
                 # No runtime errors
+                response["top_down_runtime_error"] = None
+                response["bottom_runtime_error"] = None
                 response["top_down_evaluation_result"] = eval_result.number_value
                 response["symbol_table"] = global_symbol_table.__repr__()
                 # print(json.dumps(response, indent=4))
@@ -87,4 +89,4 @@ def comviz(source_code):
 # comviz("TRUE")
 # comviz("a")
 # comviz("(2^3)^2")
-comviz("a >= 2")
+# comviz("a >= 2")
