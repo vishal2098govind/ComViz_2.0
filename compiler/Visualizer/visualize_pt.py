@@ -24,8 +24,8 @@ def visualize_parse_tree(trace, row=None, col=None):
                 dgi += line
         dgi = dgi[:-1] + ''.join(ast_digraphs) + '}'
         test.append([dgi])
-        print(test)
-        print('----------------------------')
+        # print(test)
+        # print('----------------------------')
         # pt_digraphs.append({
         #     'digraph': [dgi],
         #     'index': {

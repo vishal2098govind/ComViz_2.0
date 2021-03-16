@@ -77,7 +77,7 @@ class BUParser:
             state = stack[-1]
             pte = self.parsing_table.get(state, look_ahead.parser_type)
             if isinstance(pte, Error):
-                print(stack)
+                # print(stack)
                 self.syntax_error = pte.msg
                 print(pte.msg)
                 break
@@ -109,10 +109,12 @@ class BUParser:
                 if parent_node.value is None:
                      print(parent_node.ast_children[0].err_msg)
                      self.runtime_error = parent_node.ast_children[0].err_msg
+                     break
                 else:
                     print(parent_node.value)
                     # print('Evaluation Result: ',parent_node.ast_children[0].value)
                     self.runtime_result=parent_node.ast_children[0].value
+
                 stack.append(parent_node)
                 goto = self.parsing_table.get(stack[-2], lhs.node_val)
                 stack.append(goto.value)
@@ -157,6 +159,7 @@ class BUParser:
             return pt_children[0].value, (pt_children[0].ast_children[0],)
 
     def eval_C_node(self, pt_children):
+        print(pt_children)
         if len(pt_children) == 2:
             ast_node = AnyNode(id=uuid.uuid4(), name='not', value=not pt_children[1].value,
                                children=[pt_children[0].value, pt_children[1].ast_children])
