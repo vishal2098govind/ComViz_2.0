@@ -280,6 +280,6 @@ class BUParser:
                 value = self.symbol_table.get_var_value(pt_children[0].name)
                 if value is not None:
                     ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[0].name, value=value.number_value, children=())
-                    return value, (ast_node,)
+                    return value.number_value, (ast_node,)
                 else:
                     return None, (REError(f'{pt_children[0].name} is not defined'), )
