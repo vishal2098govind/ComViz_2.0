@@ -69,7 +69,7 @@ function Vizualizer() {
     
     const classes = useStyles();
     const [step,setStep]=useState(0)
-    const [drawer,setDrawer]=useState(true)
+    const [drawer,setDrawer]=useState(false)
     const phaseRender=()=>{
       switch(step){
         case 0: 

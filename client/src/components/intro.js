@@ -74,6 +74,7 @@ const callBackend=async()=>{
       url: 'http://localhost:8000/submit_code',
       data: form,
     });
+    console.log(response.data.data)
     dispatch(addCompilerData(response.data.data))
     setLoading(false)
     setVizStatus(true)

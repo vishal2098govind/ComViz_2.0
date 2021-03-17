@@ -35,7 +35,7 @@ function Table({ columns, data, props }) {
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => {
                 if(cell.column.Header==props.terminal && cell.row.values.terminal==props.nonTerminal){
-                  return <td style={{background:'white'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  return <td style={{background:'#80a879'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }else{
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }

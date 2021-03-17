@@ -59,7 +59,7 @@ const [slideshow,setSlideshow]=useState(false);
 
 const dots =useSelector(state=>state.digraphs)
 const [dotIndex,setDotIndex]=useState(0)
-const [dotArrayIndex,setDotArrayIndex]=useState(dots.length-1)
+const [dotArrayIndex,setDotArrayIndex]=useState(0)
 const d3=window.d3;
 useEffect(()=>{
     function attributer(datum, index, nodes) {
@@ -98,7 +98,7 @@ useEffect(()=>{
     const productions=[['int','E'],['int','E1'],['int','T'],['int','T1']]
     function render() {
       if(slideshow){
-        let dotLines = dots[dotIndex % dots.length];
+        let dotLines = dots[dotIndex % dots.length].digraph;
         // props.productionColor(productions[i % productions.length][0],productions[i % productions.length][1])
         // i+=1;
         let dot = dotLines.join('');
@@ -114,13 +114,13 @@ useEffect(()=>{
               if (dotIndex != dots.length) {
                 
                   render();
-                  props.productionColor(productions[dotIndex % productions.length][0],productions[dotIndex % productions.length][1])
+                  props.productionColor(dots[dotIndex % dots.length].index.col,dots[dotIndex % dots.length].index.row)
               }
           });
       }else{
-        let dotLines = dots[dotArrayIndex];
+        let dotLines = dots[dotArrayIndex].digraph;
         console.log(productions[dotArrayIndex % productions.length][1])
-        props.productionColor(productions[dotArrayIndex % productions.length][0],productions[dotArrayIndex % productions.length][1])
+        props.productionColor(dots[dotArrayIndex].index.col,dots[dotArrayIndex].index.row)
         
       //   if(dotArrayIndex==1){
       //     props.productionColor('int','E')

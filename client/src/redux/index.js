@@ -8,7 +8,7 @@ export default function rootReducer(state=initial,{type,payload}){
             let rawSymbolData=payload.symbol_table
             rawSymbolData=rawSymbolData.replaceAll('\'','"')
             let compilerData={
-                digraphs: payload.digraphs,
+                digraphs: payload.top_down_digraphs,
                 symbolTable : JSON.parse(rawSymbolData),
                 tokens: payload.tokens
             }
