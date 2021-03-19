@@ -25,6 +25,21 @@ result = {
 }
 
 
+def clear():
+    response["tokens"] = None
+    response["lexer_errors"] = None
+    response["top_down_digraphs"] = None
+    response["top_down_syntax_errors"] = None
+    response["top_down_evaluation_result"] = None
+    response["top_down_runtime_error"] = None
+    response["symbol_table"] = None
+    response["bottom_up_digraphs"] = None
+    response["bottom_up_syntax_errors"] = None
+    response["bottom_up_evaluation_result"] = None
+    response["bottom_up_runtime_error"] = None
+    print('Cleared response')
+
+
 def comviz(source_code):
     lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',
                                                                                            text=source_code)
