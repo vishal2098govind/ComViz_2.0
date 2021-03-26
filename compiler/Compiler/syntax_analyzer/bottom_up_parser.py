@@ -204,7 +204,8 @@ class BUParser:
     def eval_Ar_node(self, pt_children):
         if len(pt_children) == 3:
             if pt_children[1].value == '+':
-                ast_node = AnyNode(id=uuid.uuid4(), name='+', value=pt_children[0].value + pt_children[2].value,
+                ast_node = AnyNode(
+                    id=uuid.uuid4(), name='+', value=pt_children[0].value + pt_children[2].value,
                                    children=pt_children[0].ast_children + pt_children[2].ast_children)
                 visualize_bottom_up_ast(ast_node)
                 return pt_children[0].value + pt_children[2].value, (ast_node,)
@@ -253,9 +254,8 @@ class BUParser:
         if len(pt_children) == 3:
             ast_node = AnyNode(id=uuid.uuid4(), value=pt_children[0].value ** pt_children[2].value, name='^',
                                children=pt_children[0].ast_children + pt_children[2].ast_children)
-            if type(pt_children[0].value) == type(pt_children[2].value):
-                visualize_bottom_up_ast(ast_node)
-                return pt_children[0].value ** pt_children[2].value, (ast_node,)
+            visualize_bottom_up_ast(ast_node)
+            return pt_children[0].value ** pt_children[2].value, (ast_node,)
         else:
             return pt_children[0].value, (pt_children[0].ast_children[0],)
 
