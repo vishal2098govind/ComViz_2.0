@@ -56,11 +56,20 @@ const useStyles = makeStyles((theme) => ({
 function Graph(props) {
   const classes = useStyles();
 const [slideshow,setSlideshow]=useState(false);
-
-const dots =useSelector(state=>state.digraphs)
+const [parserType,setParserType]=useState(props.parserType)
+const dots =useSelector(state=> props.parserType=='topDown'? state.topDownDigraphs : state.bottomUpDigraphs)
 const [dotIndex,setDotIndex]=useState(0)
 const [dotArrayIndex,setDotArrayIndex]=useState(0)
 const d3=window.d3;
+useEffect(()=>{
+  console.log('csknkn')
+  console.log(parserType)
+  console.log(props.parserType)
+  if(parserType!=props.parserType){
+    setDotArrayIndex(0)
+    setDotIndex(0)
+  }
+},[props.parserType])
 useEffect(()=>{
     function attributer(datum, index, nodes) {
         var selection = d3.select(this);
@@ -98,7 +107,7 @@ useEffect(()=>{
     const productions=[['int','E'],['int','E1'],['int','T'],['int','T1']]
     function render() {
       if(slideshow){
-        let dotLines = dots[dotIndex % dots.length].digraph;
+        let dotLines = props.parserType=='topDown'? dots[dotIndex % dots.length].digraph : dots[dotIndex % dots.length];
         // props.productionColor(productions[i % productions.length][0],productions[i % productions.length][1])
         // i+=1;
         let dot = dotLines.join('');
@@ -114,13 +123,13 @@ useEffect(()=>{
               if (dotIndex != dots.length) {
                 
                   render();
-                  props.productionColor(dots[dotIndex % dots.length].index.col,dots[dotIndex % dots.length].index.row)
+                  if(props.parserType=='topDown') props.productionColor(dots[dotIndex % dots.length].index.col,dots[dotIndex % dots.length].index.row)     
               }
           });
       }else{
-        let dotLines = dots[dotArrayIndex].digraph;
-        console.log(productions[dotArrayIndex % productions.length][1])
-        props.productionColor(dots[dotArrayIndex].index.col,dots[dotArrayIndex].index.row)
+        let dotLines = props.parserType=='topDown' ? dots[dotArrayIndex].digraph : dots[dotArrayIndex];
+        console.log(dots[dotArrayIndex])
+        if(props.parserType=='topDown') props.productionColor(dots[dotArrayIndex].index.col,dots[dotArrayIndex].index.row)
         
       //   if(dotArrayIndex==1){
       //     props.productionColor('int','E')

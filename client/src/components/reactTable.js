@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 import { useTable } from 'react-table'
 import { Backdrop } from '@material-ui/core'
-
+import {bottomUpTableColumns,bottomUpTabledata} from './parseTableData'
 
 
 function Table({ columns, data, props }) {
@@ -52,13 +52,13 @@ function Table({ columns, data, props }) {
 function ReactTable(props) {
     let data=[]
     let columns=[]
+    console.log(props)
     if(props.data && props.columns ){
         data=props.data
         columns=props.columns
     }else if(props.columns && props.inverted && props.type=='tokenList'){
         columns=props.columns
-        
-    }else{
+    }else if(props.parserType && props.parserType=='topDown'){
         data = [{  
             terminal: 'E',
             int: 'C E1',
@@ -202,6 +202,9 @@ function ReactTable(props) {
                 accessor: colName[i]
             })
         }
+    }else if(props.parserType && props.parserType=='bottomUp'){
+      data=bottomUpTabledata
+      columns=bottomUpTableColumns
     }
     const Styles = styled.div`
     padding: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.2rem' : '0.85rem'))};

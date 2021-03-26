@@ -48,6 +48,7 @@ const [loading,setLoading]=useState(false)
 const [step,setStep]=useState(0)
 const [terminal,setTerminal]=useState('-')
 const [nonTerminal,setNonTerminal]=useState('x')
+const [parserType,setParserType]=useState('topDown')
 const tokenListData=useSelector(state=>state.tokens)
 // let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
 let tokenListColumns=[]
@@ -202,9 +203,10 @@ const syntaxStep=()=>{
         )
         case 1: return(
             <div style={{display:'inline-block'}}>
-        <ReactTable 
-        // data={symbolTableData} columns={symbolTableColumns}
-        />
+              {
+                parserType=='topDown' ? <ReactTable parserType={parserType}/> : <div style={{height:'500px',overflow:'auto',margin:'0px'}}><ReactTable parserType={parserType}/></div>
+              }
+        
         </div>
         )
         case 2: return(
@@ -212,18 +214,21 @@ const syntaxStep=()=>{
                 <Grid container spacing={3}>
                    <Grid item md={7.2}>
                      <div style={{marginTop:'10px'}}>
-                      <ReactTable 
-                      size={'small'}
-                      terminal={terminal}
-                      nonTerminal={nonTerminal}
-          />
+                       {
+                         parserType=='topDown' ? <ReactTable size={'small'}
+                         terminal={terminal}
+                         nonTerminal={nonTerminal}
+                          parserType={parserType}/> : <div style={{height:'400px',width:'800px',overflow:'auto',margin:'0px'}}><ReactTable size={'small'}
+                          terminal={terminal}
+                          nonTerminal={nonTerminal} parserType={parserType}/></div>
+                       }
           <ReactTable columns={tokenListColumns}
           inverted={true} type={'tokenList'} size={'small'}/>
                      </div>
                    
                    </Grid>
                    <Grid item md={4}>
-                      <Graph productionColor={productionColor}/>
+                      <Graph productionColor={productionColor} parserType={parserType} />
                    </Grid>
                 </Grid>
                   
@@ -269,14 +274,17 @@ const title=[{
         <Select
           // labelId="demo-simple-select-filled-label"
           // id="demo-simple-select-filled"
-          value={1}
-          defaultValue={1}
-          // onChange={handleChange}
+          value={parserType}
+          defaultValue={parserType}
+          onChange={(e)=>{
+            setParserType(e.target.value)
+            console.log(e.target.value)
+          }}
         >
-          <MenuItem value={1}>
+          <MenuItem value={'topDown'}>
             Top-Down Parser
           </MenuItem>
-          <MenuItem value={2}>Bottom-Up Parser</MenuItem>
+          <MenuItem value={'bottomUp'}>Bottom-Up Parser</MenuItem>
         </Select>
       </Button>
     <Button

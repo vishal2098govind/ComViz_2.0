@@ -4,3 +4,11 @@ export const addCompilerData=data=>{
         payload:data
     }
 }
+
+
+export const changeParser=data=>{
+    return {
+        type:'CHANGE-PARSER',
+        payload:data
+    }
+}
