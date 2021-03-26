@@ -184,6 +184,7 @@ const inputChange=(e)=>{
         <Button
         variant="contained"
         color="default"
+        style={{backgroundColor: '#17252A'}}
         className={classes.button1}
         startIcon={<CloudUploadIcon />}
       >
@@ -192,7 +193,7 @@ const inputChange=(e)=>{
         <Button
         variant="contained"
         color={codeStatus=='NotStarted'? 'default': codeStatus=='Success' ? 'green' : 'red'}
-        style={{background:`${codeStatus=='RUN CODE'? '': codeStatus=='SUCCESS' ? 'green' : 'red'}`}}
+        style={{background:`${codeStatus=='RUN CODE'? '#17252A': codeStatus=='SUCCESS' ? 'green' : 'red'}`}}
         className={classes.button1}
         endIcon={<SettingsEthernetIcon />}
         onClick={callBackend}
@@ -205,7 +206,7 @@ const inputChange=(e)=>{
         color="default"
         className={classes.button1}
         endIcon={<PlayCircleOutlineIcon />}
-        style={{marginLeft:'100px'}}
+        style={{marginLeft:'100px',backgroundColor: `${!vizStatus ? 'rgba(0, 0, 0, 0.26)': '#17252A'}`}}
         onClick={()=>{
           setDialog(false)
           setInput('')
@@ -213,6 +214,7 @@ const inputChange=(e)=>{
           setCodeStatus('RUN CODE')
           }}
         disabled={!vizStatus}
+        
       >
         VISUALIZE
       </Button>
