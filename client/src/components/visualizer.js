@@ -1,23 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactLoading from 'react-loading';
-import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  InputBase,
-  TextField,
-  Grid,
-  Button,
-  Dialog,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  CircularProgress,
-} from '@material-ui/core';
+import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Checkbox,Button,Dialog,Drawer,List,ListItem,ListItemIcon,ListItemText,Divider,CircularProgress} from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles';
 import SkipNextIcon from '@material-ui/icons/SkipNext';
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
@@ -32,107 +15,116 @@ import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import Axios from 'axios';
-import { useSelector, useDispatch } from 'react-redux';
-import { addCompilerData } from '../redux/ruleAction';
-const useStyles = makeStyles(theme => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-    textJustify: 'center',
-    minHeight:
-      typeof window !== 'undefined'
-        ? window.innerHeight
-        : '-webkit-fill-available',
-    background: '#27363b',
-    fontFamily: "'Yanone Kaffeesatz', sans-serif",
+import {useSelector,useDispatch} from 'react-redux';
+import {addCompilerData} from '../redux/ruleAction'
+const useStyles = makeStyles((theme) => ({
+    root: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign:'center',
+        textJustify:'center',
+        minHeight: typeof window !== 'undefined' ? window.innerHeight : '-webkit-fill-available',
+        background: '#27363b',
+        fontFamily:"'Yanone Kaffeesatz', sans-serif",
+    },
+    headText:{
+        fontFamily:"'Raleway', sans-serif",
+        color: '#75b2ad',
+        marginTop:'15px'
+    },
+    textWhite:{
+        fontFamily:"'Raleway', sans-serif",
+        color: '#FEFFFF',
+        marginTop:'15px'
+    },
+    simpleText:{
+        fontFamily:"'Yanone Kaffeesatz', sans-serif",
+        color: '#17252A'
+    },
+    button:{
+        backgroundColor: '#17252A',
+        border: 'none',
+        borderRadius:'10px',
+        color: '#FEFFFF',
+        padding: '15px 32px',
+        textAlign: 'center',
+        textDecoration: 'none',
+        display : 'inline-block',
+        fontSize: '16px',
+        fontFamily:"'Raleway', sans-serif",
+        margin:'10px'
+    },
+    button1:{
+        margin: theme.spacing(1),
+        backgroundColor: '#75b2ad',
+        fontFamily:"'Raleway', sans-serif",
+        color: '#FEFFFF',
+    },
+    list: {
+      width: 250,
+    },
+    fullList: {
+      width: 'auto',
+    },headText1:{
+      fontFamily:"'Raleway', sans-serif",
+      color: '#17252A',
+      marginTop:'15px',
+      fontSize:'15px'
   },
-  headText: {
-    fontFamily: "'Raleway', sans-serif",
-    color: '#75b2ad',
-    marginTop: '15px',
-  },
-  textWhite: {
-    fontFamily: "'Raleway', sans-serif",
-    color: '#FEFFFF',
-    marginTop: '15px',
-  },
-  simpleText: {
-    fontFamily: "'Yanone Kaffeesatz', sans-serif",
-    color: '#17252A',
-  },
-  button: {
-    backgroundColor: '#17252A',
-    border: 'none',
-    borderRadius: '10px',
-    color: '#FEFFFF',
-    padding: '15px 32px',
-    textAlign: 'center',
-    textDecoration: 'none',
-    display: 'inline-block',
-    fontSize: '16px',
-    fontFamily: "'Raleway', sans-serif",
-    margin: '10px',
-  },
-  button1: {
-    margin: theme.spacing(1),
-    backgroundColor: '#75b2ad',
-    fontFamily: "'Raleway', sans-serif",
-    color: '#FEFFFF',
-  },
-  list: {
-    width: 250,
-  },
-  fullList: {
-    width: 'auto',
-  },
-}));
+    }
+    ))
 function Vizualizer() {
-  const classes = useStyles();
-  const [step, setStep] = useState(0);
-  const [drawer, setDrawer] = useState(false);
-  const [dialog, setDialog] = useState(false);
-  const dispatch = useDispatch();
-  const [compilerInput, setInput] = useState('');
-  const [vizStatus, setVizStatus] = useState(false);
-  const [codeStatus, setCodeStatus] = useState('RUN CODE');
-  const [loading, setLoading] = useState(false);
-  const callBackend = async () => {
-    setLoading(true);
-    const form = new FormData();
-    form.append('source_code', compilerInput);
-    try {
-      const response = await Axios({
-        method: 'post',
-        url: 'http://localhost:8000/submit_code',
-        data: form,
-      });
-      console.log(response.data.data);
-      dispatch(addCompilerData(response.data.data));
-      setLoading(false);
-      setVizStatus(true);
-      setCodeStatus('SUCCESS');
-    } catch {
-      setVizStatus(false);
-      setCodeStatus('FAILED');
-      setLoading(false);
-    }
-  };
-  const inputChange = e => {
-    setInput(e.target.value);
-  };
-  const phaseRender = () => {
-    switch (step) {
-      case 0:
-        return <Lexical />;
-      case 1:
-        return <Syntax />;
-      default:
-        <Lexical />;
-    }
-  };
+    
+    const classes = useStyles();
+    const [step,setStep]=useState(0)
+    const [drawer,setDrawer]=useState(false);
+    const [dialog,setDialog]=useState(false);
+    const dispatch=useDispatch();
+const [compilerInput,setInput]=useState('')
+const [vizStatus,setVizStatus]=useState(false);
+const [codeStatus,setCodeStatus]=useState('RUN CODE');
+const [loading,setLoading]=useState(false)
+const [clearST,setClearST]=useState(true);
+const callBackend=async()=>{
+  setLoading(true)
+  const form = new FormData();
+  form.append('source_code',compilerInput);
+  form.append('continue',setClearST)
+  try{
+    const response = await Axios({
+      method: 'post',
+      url: 'http://localhost:8000/submit_code',
+      data: form,
+    });
+    console.log(response.data.data)
+    dispatch(addCompilerData(response.data.data))
+    setLoading(false)
+    setVizStatus(true)
+    setCodeStatus('SUCCESS')
+  }catch{
+    setVizStatus(false)
+    setCodeStatus('FAILED')
+    setLoading(false)
+  }
+}
+const inputChange=(e)=>{
+  setInput(e.target.value)
+}
+const openDialog=()=>{
+  setDialog(true)
+  console.log('csknkn')
+}
+    const phaseRender=()=>{
+      switch(step){
+        case 0: 
+          return <Lexical/>
+        case 1: 
+          return <Syntax openDialog={openDialog}/>
+        default: <Lexical/>
+      }
+    };
   return (
     <div className={classes.root}>
       <IconButton
@@ -307,65 +299,45 @@ function Vizualizer() {
                 setVizStatus(false);
                 setCodeStatus('RUN CODE');
               }}
-              disabled={!vizStatus}
-            >
-              VISUALIZE
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-      <Typography
-        variant='h2'
-        className={classes.headText}
-        style={{ position: 'fixed', bottom: '650px' }}
+        disabled={!vizStatus}
+        
       >
-        <spam style={{ color: '#FEFFFF' }}>
-          {' '}
-          {step == 0 ? 'LEXICAL' : 'SYNTAX'}{' '}
-        </spam>{' '}
-        ANALYSIS
-      </Typography>
-      {phaseRender()}
-      <div style={{ position: 'fixed' }}>
-        <Button
-          variant='contained'
-          color='default'
-          className={classes.button1}
-          style={{
-            marginTop: '10px',
-            height: '40px',
-            width: '190px',
-            top: '335px',
-            right: '571px',
-          }}
-          startIcon={<SkipPreviousIcon />}
-          disabled={step == 0}
-          onClick={() => {
-            setStep(step - 1);
-          }}
-        >
-          PREVIOUS PHASE
-        </Button>
-        <Button
-          variant='contained'
-          color='default'
-          className={classes.button1}
-          style={{
-            marginTop: '10px',
-            height: '40px',
-            width: '150px',
-            left: '570px',
-            top: '335px',
-          }}
-          endIcon={<SkipNextIcon />}
-          disabled={step == 1}
-          onClick={() => {
-            setStep(step + 1);
-          }}
-        >
-          NEXT PHASE
-        </Button>
-      </div>
+        VISUALIZE
+      </Button>
+    </div>
+    <div style={{marginRight:'0px'}}>
+        <Checkbox checked={clearST} onChange={(e)=>setClearST(e.target.checked)}name="checkedA" defaultChecked style={{color:'#17252A'}}/><Typography variant='h8' className={classes.headText1}>Clear Symbol Table</Typography>
+        </div>
+    </div>
+    </Dialog>
+    <Typography variant='h2' className={classes.headText} style={{position:'fixed',bottom:'650px'}}>
+            <spam style={{color:'#FEFFFF'}}> {step==0? 'LEXICAL': 'SYNTAX'} </spam> ANALYSIS
+    </Typography>
+    {phaseRender()}
+    <div style={{position:'fixed'}}>
+    <Button
+        variant="contained"
+        color="default"
+        className={classes.button1}
+        style={{marginTop:'10px',height:'40px',width:'190px',top:'335px',right:'571px'}} 
+        startIcon={<SkipPreviousIcon />}
+        disabled={step==0}
+        onClick={()=>{setStep(step-1)}}
+      >
+        PREVIOUS PHASE
+    </Button>
+    <Button
+        variant="contained"
+        color="default"
+        className={classes.button1}
+        style={{marginTop:'10px',height:'40px',width:'150px',left:'570px',top:'335px'}}
+        endIcon={<SkipNextIcon />}
+        disabled={step==1}
+        onClick={()=>{setStep(step+1)}}
+      >
+        NEXT PHASE
+      </Button>
+    </div>
     </div>
   );
 }

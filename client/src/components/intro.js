@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import {
-  Typography,
-  TextField,
-  Button,
-  CircularProgress,
-} from '@material-ui/core';
+import { Typography,TextField,Button,CircularProgress,FormControlLabel,Checkbox } from '@material-ui/core';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
@@ -64,35 +59,38 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function Intro(props) {
-  const classes = useStyles();
-  const [start, setStart] = useState(false);
-  const dispatch = useDispatch();
-  const [compilerInput, setInput] = useState('');
-  const [vizStatus, setVizStatus] = useState(false);
-  const [codeStatus, setCodeStatus] = useState('RUN CODE');
-  const [loading, setLoading] = useState(false);
-
-  const callBackend = async () => {
-    setLoading(true);
-    const form = new FormData();
-    form.append('source_code', compilerInput);
-    try {
-      const response = await Axios({
-        method: 'post',
-        url: 'http://localhost:8000/submit_code',
-        data: form,
-      });
-      console.log(response.data.data);
-      dispatch(addCompilerData(response.data.data));
-      setLoading(false);
-      setVizStatus(true);
-      setCodeStatus('SUCCESS');
-    } catch {
-      setVizStatus(false);
-      setCodeStatus('FAILED');
-      setLoading(false);
-    }
-  };
+const classes = useStyles();
+const [start,setStart]=useState(false)
+const dispatch=useDispatch();
+const [compilerInput,setInput]=useState('')
+const [vizStatus,setVizStatus]=useState(false);
+const [codeStatus,setCodeStatus]=useState('RUN CODE');
+const [loading,setLoading]=useState(false);
+const [clearST,setClearST]=useState(true);
+console.log(clearST)
+const callBackend=async()=>{
+  setLoading(true)
+  const form = new FormData();
+  form.append('source_code',compilerInput);
+  form.append('continue',setClearST)
+  try{
+    let response = await Axios({
+      method: 'post',
+      url: 'http://localhost:8000/submit_code',
+      data: form,
+    });
+    response.data.data['compilerInput']=compilerInput
+    dispatch(addCompilerData(response.data.data))
+    setLoading(false)
+    setVizStatus(true)
+    setCodeStatus('SUCCESS')
+  }catch(e){
+    console.log(e)
+    setVizStatus(false)
+    setCodeStatus('FAILED')
+    setLoading(false)
+  }
+}
 
   const inputChange = e => {
     setInput(e.target.value);
@@ -111,28 +109,21 @@ function Intro(props) {
           <br />
         </Typography>
         <Button
-          variant='contained'
-          color='default'
-          className={classes.button1}
-          style={{ marginTop: '10px', height: '40px', width: '150px' }}
-          onClick={() => {
-            setStart(!start);
-          }}
-        >
-          START
-        </Button>
-      </div>
-    );
-  };
-  const Second = () => {
-    return (
-      <div>
-        <Typography
-          variant='h1'
-          className={classes.headText}
-          style={{ marginTop: '-20px' }}
-        >
-          <spam style={{ color: '#FEFFFF' }}>COMPILER</spam> VISUALIZER
+        variant="contained"
+        color="default"
+        className={classes.button1}
+        style={{marginTop:'10px',height:'40px',width:'150px'}} onClick={()=>{setStart(!start)}}
+      >
+        START
+      </Button>
+        </div>
+    )
+}
+const Second=()=>{
+    return(
+        <div>
+        <Typography variant='h1' className={classes.headText} style={{marginTop:'-10px'}}>
+            <spam style={{color:'#FEFFFF'}}>COMPILER</spam> VISUALIZER
         </Typography>
         <TextField
           //   id="outlined-multiline-static"
@@ -149,82 +140,61 @@ function Intro(props) {
           value={compilerInput}
           onChange={inputChange}
         />
-
-        <div>
-          <Button
-            variant='contained'
-            color='default'
-            className={classes.button1}
-            startIcon={<CloudUploadIcon />}
-          >
-            Upload
-          </Button>
-          <Button
-            variant='contained'
-            // color={codeStatus=='NotStarted'? 'default': codeStatus=='Success' ? 'green' : 'red'}
-            style={{
-              background: `${
-                codeStatus == 'RUN CODE'
-                  ? ''
-                  : codeStatus == 'SUCCESS'
-                  ? 'green'
-                  : 'red'
-              }`,
-            }}
-            className={classes.button1}
-            endIcon={<SettingsEthernetIcon />}
-            onClick={callBackend}
-          >
-            {loading ? (
-              <CircularProgress
-                style={{ height: '24px', width: '24px', margin: '0px 22px' }}
-              />
-            ) : (
-              `${codeStatus}`
-            )}
-          </Button>
-
-          <Button
-            variant='contained'
-            color='default'
-            className={classes.button1}
-            endIcon={<PlayCircleOutlineIcon />}
-            style={{ marginLeft: '190px' }}
-            onClick={() => {
-              props.setVisualize(true);
-            }}
-            disabled={!vizStatus}
-          >
-            VISUALIZE
-          </Button>
+        
+        <div >
+        <Button
+        variant="contained"
+        color="default"
+        className={classes.button1}
+        startIcon={<CloudUploadIcon />}
+      >
+        Upload
+      </Button>
+        <Button
+        variant="contained"
+        // color={codeStatus=='NotStarted'? 'default': codeStatus=='Success' ? 'green' : 'red'}
+        style={{background:`${codeStatus=='RUN CODE'? '': codeStatus=='SUCCESS' ? 'green' : 'red'}`}}
+        className={classes.button1}
+        endIcon={<SettingsEthernetIcon />}
+        onClick={callBackend}
+      >
+        {loading ? <CircularProgress style={{height:'24px',width:'24px',margin:'0px 22px'}} /> : `${codeStatus}`}
+      </Button>
+      {/* <FormControlLabel
+        control={<Checkbox checked={true} name="checkedA" />}
+        label="Clear ST"
+      /> */}
+        <Button
+        variant="contained"
+        color="default"
+        className={classes.button1}
+        endIcon={<PlayCircleOutlineIcon />}
+        style={{marginLeft:'190px'}}
+        onClick={()=>{props.setVisualize(true)}}
+        disabled={!vizStatus}
+      >
+        VISUALIZE
+      </Button>
         </div>
-        <div style={{ marginTop: '40px' }}>
-          <Typography variant='h3' className={classes.headText}>
-            <spam style={{ color: '#FEFFFF' }}>What you will see</spam>
-            <br />
-            in our Visualizer?
-          </Typography>
-          <Typography variant='h5' className={classes.headText}>
-            <spam style={{ color: '#FEFFFF' }}>
-              1. Lexical Analysis Phase with
-            </spam>
-            <br />
-            symbol table and token list
-          </Typography>
-          <Typography variant='h5' className={classes.headText}>
-            <spam style={{ color: '#FEFFFF' }}>
-              2. Syntax Analysis Phase with
-            </spam>
-            <br />
-            parse table and parse tree
-          </Typography>
-          <Typography variant='h5' className={classes.headText}>
-            <spam style={{ color: '#FEFFFF' }}>3. Creation of Parse Tree</spam>{' '}
-            <br /> and AST with Animation
-          </Typography>
-          <Typography variant='h5' className={classes.headText}>
-            <spam style={{ color: '#FEFFFF' }}>4. Final</spam> Result
-          </Typography>
+        <div style={{marginRight:'420px'}}>
+        <Checkbox checked={clearST} onChange={(e)=>setClearST(e.target.checked)}name="checkedA" defaultChecked style={{color:'#17252A'}}/><Typography variant='h8' className={classes.headText}>Clear Symbol Table</Typography>
+        </div>
+        <div style={{marginTop:'-15px'}}>
+            <Typography variant='h3' className={classes.headText}>
+            <spam style={{color:'#FEFFFF'}}>What you will see</spam><br/>in our Visualizer?
+            </Typography>
+            <Typography variant='h5' className={classes.headText}>
+            <spam style={{color:'#FEFFFF'}}>1. Lexical Analysis Phase with</spam><br/>symbol table and token list
+            </Typography>
+            <Typography variant='h5' className={classes.headText}>
+            <spam style={{color:'#FEFFFF'}}>2. Syntax Analysis Phase with</spam><br/>parse table and parse tree
+            </Typography>
+            <Typography variant='h5' className={classes.headText}>
+            <spam style={{color:'#FEFFFF'}}>3. Creation of Parse Tree</spam> <br/> and AST with Animation
+            </Typography>
+            <Typography variant='h5' className={classes.headText}>
+            <spam style={{color:'#FEFFFF'}}>4. Final</spam> Result
+            </Typography>
         </div>
       </div>
     );

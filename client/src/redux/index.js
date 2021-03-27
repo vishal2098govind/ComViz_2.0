@@ -12,7 +12,8 @@ export default function rootReducer(state=initial,{type,payload}){
                 bottomUpDigraphs: payload.bottom_up_digraphs,
                 symbolTable : JSON.parse(rawSymbolData),
                 tokens: payload.tokens,
-                parserType: 'topDown'
+                parserType: 'topDown',
+                compilerInput: payload.compilerInput
             }
 
             return {...compilerData};
