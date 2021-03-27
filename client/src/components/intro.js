@@ -1,7 +1,7 @@
 
 import React,{useEffect, useState} from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Typography,TextField,Button,CircularProgress } from '@material-ui/core';
+import { Typography,TextField,Button,CircularProgress,FormControlLabel,Checkbox } from '@material-ui/core';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
@@ -63,23 +63,27 @@ const dispatch=useDispatch();
 const [compilerInput,setInput]=useState('')
 const [vizStatus,setVizStatus]=useState(false);
 const [codeStatus,setCodeStatus]=useState('RUN CODE');
-const [loading,setLoading]=useState(false)
+const [loading,setLoading]=useState(false);
+const [clearST,setClearST]=useState(true);
+console.log(clearST)
 const callBackend=async()=>{
   setLoading(true)
   const form = new FormData();
   form.append('source_code',compilerInput);
+  form.append('continue',setClearST)
   try{
-    const response = await Axios({
+    let response = await Axios({
       method: 'post',
       url: 'http://localhost:8000/submit_code',
       data: form,
     });
-    console.log(response.data.data)
+    response.data.data['compilerInput']=compilerInput
     dispatch(addCompilerData(response.data.data))
     setLoading(false)
     setVizStatus(true)
     setCodeStatus('SUCCESS')
-  }catch{
+  }catch(e){
+    console.log(e)
     setVizStatus(false)
     setCodeStatus('FAILED')
     setLoading(false)
@@ -112,7 +116,7 @@ const First=()=>{
 const Second=()=>{
     return(
         <div>
-        <Typography variant='h1' className={classes.headText} style={{marginTop:'-20px'}}>
+        <Typography variant='h1' className={classes.headText} style={{marginTop:'-10px'}}>
             <spam style={{color:'#FEFFFF'}}>COMPILER</spam> VISUALIZER
         </Typography>
         <TextField
@@ -146,7 +150,10 @@ const Second=()=>{
       >
         {loading ? <CircularProgress style={{height:'24px',width:'24px',margin:'0px 22px'}} /> : `${codeStatus}`}
       </Button>
-      
+      {/* <FormControlLabel
+        control={<Checkbox checked={true} name="checkedA" />}
+        label="Clear ST"
+      /> */}
         <Button
         variant="contained"
         color="default"
@@ -159,7 +166,10 @@ const Second=()=>{
         VISUALIZE
       </Button>
         </div>
-        <div style={{marginTop:'40px'}}>
+        <div style={{marginRight:'420px'}}>
+        <Checkbox checked={clearST} onChange={(e)=>setClearST(e.target.checked)}name="checkedA" defaultChecked style={{color:'#17252A'}}/><Typography variant='h8' className={classes.headText}>Clear Symbol Table</Typography>
+        </div>
+        <div style={{marginTop:'-15px'}}>
             <Typography variant='h3' className={classes.headText}>
             <spam style={{color:'#FEFFFF'}}>What you will see</spam><br/>in our Visualizer?
             </Typography>

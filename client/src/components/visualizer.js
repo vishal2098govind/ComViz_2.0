@@ -1,7 +1,7 @@
 
 import React,{useEffect, useState} from 'react';
 import ReactLoading from 'react-loading';
-import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Grid,Button,Dialog,Drawer,List,ListItem,ListItemIcon,ListItemText,Divider,CircularProgress} from '@material-ui/core'
+import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Checkbox,Button,Dialog,Drawer,List,ListItem,ListItemIcon,ListItemText,Divider,CircularProgress} from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles';
 import SkipNextIcon from '@material-ui/icons/SkipNext';
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
@@ -68,7 +68,12 @@ const useStyles = makeStyles((theme) => ({
     },
     fullList: {
       width: 'auto',
-    },
+    },headText1:{
+      fontFamily:"'Raleway', sans-serif",
+      color: '#17252A',
+      marginTop:'15px',
+      fontSize:'15px'
+  },
     }
     ))
 function Vizualizer() {
@@ -82,10 +87,12 @@ const [compilerInput,setInput]=useState('')
 const [vizStatus,setVizStatus]=useState(false);
 const [codeStatus,setCodeStatus]=useState('RUN CODE');
 const [loading,setLoading]=useState(false)
+const [clearST,setClearST]=useState(true);
 const callBackend=async()=>{
   setLoading(true)
   const form = new FormData();
   form.append('source_code',compilerInput);
+  form.append('continue',setClearST)
   try{
     const response = await Axios({
       method: 'post',
@@ -106,12 +113,16 @@ const callBackend=async()=>{
 const inputChange=(e)=>{
   setInput(e.target.value)
 }
+const openDialog=()=>{
+  setDialog(true)
+  console.log('csknkn')
+}
     const phaseRender=()=>{
       switch(step){
         case 0: 
           return <Lexical/>
         case 1: 
-          return <Syntax/>
+          return <Syntax openDialog={openDialog}/>
         default: <Lexical/>
       }
     }
@@ -219,6 +230,9 @@ const inputChange=(e)=>{
         VISUALIZE
       </Button>
     </div>
+    <div style={{marginRight:'0px'}}>
+        <Checkbox checked={clearST} onChange={(e)=>setClearST(e.target.checked)}name="checkedA" defaultChecked style={{color:'#17252A'}}/><Typography variant='h8' className={classes.headText1}>Clear Symbol Table</Typography>
+        </div>
     </div>
     </Dialog>
     <Typography variant='h2' className={classes.headText} style={{position:'fixed',bottom:'650px'}}>

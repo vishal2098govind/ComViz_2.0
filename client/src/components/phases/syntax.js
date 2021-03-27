@@ -7,6 +7,7 @@ import Graph from '../graph'
 import SkipNextIcon from '@material-ui/icons/SkipNext';
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
 import {useSelector} from 'react-redux'
+import dfa from '../../images/dfa.svg'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -41,7 +42,7 @@ button1:{
 }
 }
 ))
-function Syntax() {
+function Syntax(props) {
   const classes = useStyles();
 const [visualize,setVisualize]=useState(true)
 const [loading,setLoading]=useState(false)
@@ -50,6 +51,7 @@ const [terminal,setTerminal]=useState('-')
 const [nonTerminal,setNonTerminal]=useState('x')
 const [parserType,setParserType]=useState('topDown')
 const tokenListData=useSelector(state=>state.tokens)
+const compilerInput=useSelector(state=>state.compilerInput)
 // let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
 let tokenListColumns=[]
 tokenListColumns.push({
@@ -71,8 +73,7 @@ let grammarTableColumns=[{
   Header: 'Productions',
   accessor: 'prod'
 }]
-
-let grammarTableData=[{
+let topDowngrammarTableData=[{
   terminal: 'E',
   prod: '-> var ID=E | CE1'
 },
@@ -114,6 +115,35 @@ let grammarTableData=[{
 },
 {
   terminal: 'L',
+  prod: '-> int | float | ID | (E)'
+},
+]
+let bottomUpgrammarTableData=[{
+  terminal: 'E',
+  prod: '-> var ID=E | E and C | E or C | C'
+},
+{
+  terminal: 'C',
+  prod: '-> NOT C | C==Ar | C>=Ar | C<=Ar | C<Ar | C>Ar | Ar '
+},
+{
+  terminal: 'Ar',
+  prod: '-> Ar+T | Ar-T | T'
+},
+{
+  terminal: 'T',
+  prod: '-> T*F | T/F | F'
+},
+{
+  terminal: 'F',
+  prod: '-> +P | -P | P'
+},
+{
+  terminal: 'P',
+  prod: '-> A ^ P | A'
+},
+{
+  terminal: 'A',
   prod: '-> int | float | ID | (E)'
 },
 ]
@@ -185,9 +215,16 @@ const syntaxStep=()=>{
     // }
     switch(step){
         case 0: return(
+        <div>
+          {
+            parserType!='topDown' ? <div style={{position:'fixed',right:'0',top:'10%'}}><Button variant="contained"
+            color="default"
+            className={classes.button1}><a href={dfa} alt='Image description' target="_blank" rel='noreferrer' style={{textDecoration:'none',color:'white'}}>Show DFA</a></Button></div> : ''
+          }
+        
         <div style={{display:'inline-block',marginTop:'-12px'}}>
-        <div style={{display:'inline-block', marginBottom: '20px'}}>
-        <ReactTable data={grammarTableData} columns={grammarTableColumns}
+        <div style={{display:'inline-block', marginBottom: `${parserType!='topDown' ? '90px' :'20px'}`}}>
+        <ReactTable data={parserType=='topDown' ?  topDowngrammarTableData : bottomUpgrammarTableData} columns={grammarTableColumns}
           size={'large'}
         />
         </div>
@@ -197,8 +234,7 @@ const syntaxStep=()=>{
         data={abData} columns={abColumn}
         />
         </div>
-        
-        
+        </div>
         </div>
         )
         case 1: return(
@@ -211,6 +247,11 @@ const syntaxStep=()=>{
         )
         case 2: return(
             <div>
+                <div style={{position:'fixed',right:'0',top:'8%'}}>
+            <TextField style={{backgroundColor:'#DEF2F1',borderRadius:'7px',marginTop:'10px'}} value={compilerInput} disabled={true} onClick={()=>{props.openDialog()}}/>     
+            <Button variant="contained"
+            color="default"
+            className={classes.button1}>Show Symbol Table</Button></div>
                 <Grid container spacing={3}>
                    <Grid item md={7.2}>
                      <div style={{marginTop:'10px'}}>
