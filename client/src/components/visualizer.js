@@ -1,5 +1,4 @@
-
-import React,{useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactLoading from 'react-loading';
 import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Checkbox,Button,Dialog,Drawer,List,ListItem,ListItemIcon,ListItemText,Divider,CircularProgress} from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles';
@@ -10,8 +9,8 @@ import PaymentIcon from '@material-ui/icons/Payment';
 import HomeIcon from '@material-ui/icons/Home';
 import CodeIcon from '@material-ui/icons/Code';
 import EmojiPeopleIcon from '@material-ui/icons/EmojiPeople';
-import Lexical from './phases/lexical'
-import Syntax from './phases/syntax'
+import Lexical from './phases/lexical';
+import Syntax from './phases/syntax';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
@@ -125,18 +124,30 @@ const openDialog=()=>{
           return <Syntax openDialog={openDialog}/>
         default: <Lexical/>
       }
-    }
+    };
   return (
     <div className={classes.root}>
-      <IconButton style={{position:'fixed',top:'5px',left:'5px',background:'#75b2ad'}} onClick={()=>{
-        setDrawer(true)
-      }}>
-          <MenuIcon style={{color:'white'}}/>
+      <IconButton
+        style={{
+          position: 'fixed',
+          top: '5px',
+          left: '5px',
+          background: '#75b2ad',
+        }}
+        onClick={() => {
+          setDrawer(true);
+        }}
+      >
+        <MenuIcon style={{ color: 'white' }} />
       </IconButton>
-      <Drawer anchor={'left'} open={drawer} onClick={()=>{
-        setDrawer(false)
-      }}>
-      <List className={classes.list} >
+      <Drawer
+        anchor={'left'}
+        open={drawer}
+        onClick={() => {
+          setDrawer(false);
+        }}
+      >
+        <List className={classes.list}>
           {/* {['Home', 'New Input', 'About Us', 'Donate'].map((text, index) => (
             <div>
             <ListItem button key={text}>
@@ -147,83 +158,147 @@ const openDialog=()=>{
             </div>
           ))} */}
           <div>
-            <Typography variant={'h5'} style={{textAlign:'center',backgroundColor:'#3AAFA9',marginTop:'-9px',color: '#17252A',fontFamily:"'Raleway', sans-serif"}}><spam style={{color:'#FEFFFF'}}>COMPILER</spam> VISUALIZER</Typography>
-            <Divider/>
-          <ListItem button onClick={()=>window.location.reload()}key={'Home'}>
-              <ListItemIcon><HomeIcon/></ListItemIcon>
+            <Typography
+              variant={'h5'}
+              style={{
+                textAlign: 'center',
+                backgroundColor: '#3AAFA9',
+                marginTop: '-9px',
+                color: '#17252A',
+                fontFamily: "'Raleway', sans-serif",
+              }}
+            >
+              <spam style={{ color: '#FEFFFF' }}>COMPILER</spam> VISUALIZER
+            </Typography>
+            <Divider />
+            <ListItem
+              button
+              onClick={() => window.location.reload()}
+              key={'Home'}
+            >
+              <ListItemIcon>
+                <HomeIcon />
+              </ListItemIcon>
               <ListItemText primary={'Home'} />
             </ListItem>
-            <Divider/>
-            <ListItem button onClick={()=>setDialog(true)}key={'New Input'}>
-              <ListItemIcon><CodeIcon/></ListItemIcon>
+            <Divider />
+            <ListItem button onClick={() => setDialog(true)} key={'New Input'}>
+              <ListItemIcon>
+                <CodeIcon />
+              </ListItemIcon>
               <ListItemText primary={'New Input'} />
             </ListItem>
-            <Divider/>
-            <ListItem button onClick={()=>window.location.reload()}key={'About Us'}>
-              <ListItemIcon><EmojiPeopleIcon/></ListItemIcon>
+            <Divider />
+            <ListItem
+              button
+              onClick={() => window.location.reload()}
+              key={'About Us'}
+            >
+              <ListItemIcon>
+                <EmojiPeopleIcon />
+              </ListItemIcon>
               <ListItemText primary={'About Us'} />
             </ListItem>
-            <Divider/>
-            <ListItem button onClick={()=>window.location.reload()}key={'Donate'}>
-              <ListItemIcon><PaymentIcon/></ListItemIcon>
+            <Divider />
+            <ListItem
+              button
+              onClick={() => window.location.reload()}
+              key={'Donate'}
+            >
+              <ListItemIcon>
+                <PaymentIcon />
+              </ListItemIcon>
               <ListItemText primary={'Donate'} />
             </ListItem>
-            <Divider/>
-            </div>
+            <Divider />
+          </div>
         </List>
       </Drawer>
-      <Dialog open={dialog} onClose={()=>{
-        setDialog(false)
-        setInput('')
-        setVizStatus(false)
-        setCodeStatus('RUN CODE')
-        }}>
-      <div style={{background:'#3AAFA9',width:'520px'}}>
-        <TextField
-        //   id="outlined-multiline-static"
-          style={{backgroundColor:'#DEF2F1',borderRadius:'7px',width:'500px',margin:'10px'}}
-        //   label="Write code here.."
-          multiline
-          rows={5}
-          placeholder="Write your code here.."
-          variant="outlined"
-          value={compilerInput}
-          onChange={inputChange}
-        />
-        
-        <div >
-        <Button
-        variant="contained"
-        color="default"
-        style={{backgroundColor: '#17252A'}}
-        className={classes.button1}
-        startIcon={<CloudUploadIcon />}
+      <Dialog
+        open={dialog}
+        onClose={() => {
+          setDialog(false);
+          setInput('');
+          setVizStatus(false);
+          setCodeStatus('RUN CODE');
+        }}
       >
-        Upload
-      </Button>
-        <Button
-        variant="contained"
-        color={codeStatus=='NotStarted'? 'default': codeStatus=='Success' ? 'green' : 'red'}
-        style={{background:`${codeStatus=='RUN CODE'? '#17252A': codeStatus=='SUCCESS' ? 'green' : 'red'}`}}
-        className={classes.button1}
-        endIcon={<SettingsEthernetIcon />}
-        onClick={callBackend}
-      >
-        {loading ? <CircularProgress style={{height:'24px',width:'24px',margin:'0px 22px'}} /> : `${codeStatus}`}
-      </Button>
-      
-        <Button
-        variant="contained"
-        color="default"
-        className={classes.button1}
-        endIcon={<PlayCircleOutlineIcon />}
-        style={{marginLeft:'100px',backgroundColor: `${!vizStatus ? 'rgba(0, 0, 0, 0.26)': '#17252A'}`}}
-        onClick={()=>{
-          setDialog(false)
-          setInput('')
-          setVizStatus(false)
-          setCodeStatus('RUN CODE')
-          }}
+        <div style={{ background: '#3AAFA9', width: '520px' }}>
+          <TextField
+            //   id="outlined-multiline-static"
+            style={{
+              backgroundColor: '#DEF2F1',
+              borderRadius: '7px',
+              width: '500px',
+              margin: '10px',
+            }}
+            //   label="Write code here.."
+            multiline
+            rows={5}
+            placeholder='Write your code here..'
+            variant='outlined'
+            value={compilerInput}
+            onChange={inputChange}
+          />
+
+          <div>
+            <Button
+              variant='contained'
+              color='default'
+              style={{ backgroundColor: '#17252A' }}
+              className={classes.button1}
+              startIcon={<CloudUploadIcon />}
+            >
+              Upload
+            </Button>
+            <Button
+              variant='contained'
+              color={
+                codeStatus == 'NotStarted'
+                  ? 'default'
+                  : codeStatus == 'Success'
+                  ? 'green'
+                  : 'red'
+              }
+              style={{
+                background: `${
+                  codeStatus == 'RUN CODE'
+                    ? '#17252A'
+                    : codeStatus == 'SUCCESS'
+                    ? 'green'
+                    : 'red'
+                }`,
+              }}
+              className={classes.button1}
+              endIcon={<SettingsEthernetIcon />}
+              onClick={callBackend}
+            >
+              {loading ? (
+                <CircularProgress
+                  style={{ height: '24px', width: '24px', margin: '0px 22px' }}
+                />
+              ) : (
+                `${codeStatus}`
+              )}
+            </Button>
+
+            <Button
+              variant='contained'
+              color='default'
+              className={classes.button1}
+              endIcon={<PlayCircleOutlineIcon />}
+              style={{
+                marginLeft: '100px',
+                backgroundColor: `${
+                  !vizStatus ? 'rgba(0, 0, 0, 0.26)' : '#17252A'
+                }`,
+              }}
+              onClick={() => {
+                setDialog(false);
+                setInput('');
+                setVizStatus(false);
+                setCodeStatus('RUN CODE');
+              }}
         disabled={!vizStatus}
         
       >
@@ -264,7 +339,6 @@ const openDialog=()=>{
       </Button>
     </div>
     </div>
-    
   );
 }
 

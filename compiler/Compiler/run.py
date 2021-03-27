@@ -3,7 +3,8 @@ from Compiler.semantic_analyzer.context import Context
 from Compiler.semantic_analyzer.data_types import Number
 from Compiler.semantic_analyzer.evaluate_ast import EvaluateAST
 from Compiler.semantic_analyzer.symbol_table import SymbolTable
-from Compiler.syntax_analyzer.top_down_parser  import Parser
+from Visualizer.visualize_pt import VisualizeParseTree
+from Visualizer.visualize_ast import VisualizeAST
 
 global_symbol_table = SymbolTable()
 global_symbol_table.set_var_value("NULL", Number(0))
@@ -14,21 +15,21 @@ global_context = Context(curr_context_name='<program>', parent_context_name=None
 global_context.symbol_table=global_symbol_table
 
 
-def run(file_name, text):
+def run(file_name, text, parser):
     lexer = Lexer(text=text, file_name=file_name)
     tokens, illegal_char_error = lexer.make_tokens()
 
     # Parser
     if illegal_char_error:
         return None, illegal_char_error, None, None, None, None
-    parser = Parser(tokens_list=tokens)
+    parser.tokens_list=tokens
+    parser.current_token = tokens[0]
     ast = parser.parse()
     ast_root, invalid_syntax_error = ast.node, ast.error
 
     if invalid_syntax_error:
         return tokens, None, None, invalid_syntax_error, None, None
 
-    # print(pt_digraphs)
     evaluate_ast = EvaluateAST()
     runtime_result = evaluate_ast.evaluate_node(node=ast_root, context=global_context)
     eval_result = runtime_result.value
