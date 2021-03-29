@@ -7,6 +7,7 @@ import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import Axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { addCompilerData } from '../redux/ruleAction';
+import ErrorBar from './errorBar'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -67,7 +68,7 @@ const [vizStatus,setVizStatus]=useState(false);
 const [codeStatus,setCodeStatus]=useState('RUN CODE');
 const [loading,setLoading]=useState(false);
 const [clearST,setClearST]=useState(true);
-console.log(clearST)
+const [errorMessage,setErrorMessage]=useState('')
 const callBackend=async()=>{
   setLoading(true)
   const form = new FormData();
@@ -79,13 +80,22 @@ const callBackend=async()=>{
       url: 'http://localhost:8000/submit_code',
       data: form,
     });
-    response.data.data['compilerInput']=compilerInput
+    if(response.data.status=='error'){
+    setErrorMessage(response.data.data.lexer_errors)
+    setVizStatus(false)
+    setCodeStatus('FAILED')
+    setLoading(false)
+    }else{
+      response.data.data['compilerInput']=compilerInput
     dispatch(addCompilerData(response.data.data))
     setLoading(false)
     setVizStatus(true)
     setCodeStatus('SUCCESS')
+    }
+    
   }catch(e){
     console.log(e)
+    // setErrorMessage()
     setVizStatus(false)
     setCodeStatus('FAILED')
     setLoading(false)
@@ -95,7 +105,10 @@ const callBackend=async()=>{
   const inputChange = e => {
     setInput(e.target.value);
   };
-
+  const errorClose=()=>{
+    console.log('sjb')
+    setCodeStatus('RUN CODE')
+  }
   const First = () => {
     return (
       <div>
@@ -196,6 +209,7 @@ const Second=()=>{
             <spam style={{color:'#FEFFFF'}}>4. Final</spam> Result
             </Typography>
         </div>
+        { errorMessage ? <ErrorBar text={errorMessage} errorClose={errorClose}/> : ''}
       </div>
     );
   };

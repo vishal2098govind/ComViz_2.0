@@ -8,7 +8,7 @@ import SkipNextIcon from '@material-ui/icons/SkipNext';
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
 import {useSelector} from 'react-redux'
 import dfa from '../../images/dfa.svg'
-
+import ErrorBar from '../errorBar'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -60,6 +60,8 @@ const [parserType,setParserType]=useState('topDown')
 const tokenListData=useSelector(state=>state.tokens)
 const compilerInput=useSelector(state=>state.compilerInput)
 const syData=useSelector(state=>state.symbolTable)
+const errorMessageTopDown=useSelector(state=>state.topDownError)
+const errorMessageBottomUp=useSelector(state=>state.bottomUpError)
 const [stDialog,setStDialog]=useState(false)
 // let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
 let tokenListColumns=[]
@@ -386,7 +388,7 @@ const title=[{
         NEXT STEP
       </Button>
     </div>
-    
+    { (errorMessageTopDown && parserType=='topDown') || (errorMessageBottomUp && parserType=='bottomUp') ? <ErrorBar text={`${errorMessageTopDown && parserType=='topDown' ? errorMessageTopDown : errorMessageBottomUp} `} /> : ''}
     </div>
   );
 }

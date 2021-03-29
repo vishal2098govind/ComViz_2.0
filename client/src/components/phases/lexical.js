@@ -5,7 +5,7 @@ import CustomizedTables from '../materialTable'
 import ReactTable from '../reactTable'
 import Graph from '../graph'
 import {useSelector} from 'react-redux'
-
+import ErrorBar from '../errorBar'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -39,7 +39,7 @@ const [visualize,setVisualize]=useState(true)
 const [loading,setLoading]=useState(false)
 const tokenListData=useSelector(state=>state.tokens)
 const syData=useSelector(state=>state.symbolTable)
-console.log(syData)
+const errorMessage=useSelector(state=>state.lexerError)
 // let tokenListData=[{
 //   token:'< int: 1 >'
 // },{
@@ -161,6 +161,7 @@ symbolTableData.push(object)
          data={symbolTableData} columns={symbolTableColumns}
          inverted={true}
          /> 
+         { errorMessage ? <ErrorBar text={errorMessage} /> : ''}
     </div>
   );
 }

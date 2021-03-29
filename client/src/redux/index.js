@@ -13,7 +13,10 @@ export default function rootReducer(state=initial,{type,payload}){
                 symbolTable : JSON.parse(rawSymbolData),
                 tokens: payload.tokens,
                 parserType: 'topDown',
-                compilerInput: payload.compilerInput
+                compilerInput: payload.compilerInput,
+                lexerError: payload.lexer_errors,
+                topDownError: payload.top_down_syntax_errors+payload.top_down_runtime_error,
+                bottomUpError: payload.bottom_up_syntax_errors+payload.bottom_up_runtime_error
             }
 
             return {...compilerData};
