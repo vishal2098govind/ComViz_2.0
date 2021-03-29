@@ -151,7 +151,8 @@ function Graph(props) {
             if (props.parserType == 'topDown')
               props.productionColor(
                 dots[dotIndex % dots.length].index.col,
-                dots[dotIndex % dots.length].index.row
+                dots[dotIndex % dots.length].index.row,
+                dots[dotIndex % dots.length].index.look_ahead
               );
           }
         });
@@ -164,7 +165,8 @@ function Graph(props) {
         if (props.parserType == 'topDown')
           props.productionColor(
             dots[dotArrayIndex].index.col,
-            dots[dotArrayIndex].index.row
+            dots[dotArrayIndex].index.row,
+            dots[dotArrayIndex].index.look_ahead,
           );
 
         //   if(dotArrayIndex==1){

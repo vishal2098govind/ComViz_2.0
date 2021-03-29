@@ -1,6 +1,6 @@
 import React,{useEffect, useState} from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Grid,LinearProgress,Button,Paper,Select,MenuItem} from '@material-ui/core'
+import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Grid,LinearProgress,Button,Paper,Select,MenuItem,Dialog} from '@material-ui/core'
 import CustomizedTables from '../materialTable'
 import ReactTable from '../reactTable'
 import Graph from '../graph'
@@ -39,6 +39,12 @@ button1:{
     backgroundColor: '#75b2ad',
     fontFamily:"'Raleway', sans-serif",
     color: '#FEFFFF',
+},
+dialog: {
+  position: 'absolute',
+  left: 10,
+  top: 50,
+  width: '1000px'
 }
 }
 ))
@@ -49,9 +55,12 @@ const [loading,setLoading]=useState(false)
 const [step,setStep]=useState(0)
 const [terminal,setTerminal]=useState('-')
 const [nonTerminal,setNonTerminal]=useState('x')
+const [tokenIndex,setTokenIndex]=useState(0)
 const [parserType,setParserType]=useState('topDown')
 const tokenListData=useSelector(state=>state.tokens)
 const compilerInput=useSelector(state=>state.compilerInput)
+const syData=useSelector(state=>state.symbolTable)
+const [stDialog,setStDialog]=useState(false)
 // let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
 let tokenListColumns=[]
 tokenListColumns.push({
@@ -202,10 +211,30 @@ let dummyData=[{
   int: '-> TA1'
 },
 ]
-const productionColor=(t,nt)=>{
+
+let symbolTableColumns=[]
+symbolTableColumns.push({
+  Header :'Variable',
+  accessor: 'var'
+
+})
+let symbolTableData=[]
+let object={}
+object['var']='Variable Value'
+syData.var.forEach((col,index)=>{
+  symbolTableColumns.push({
+    Header: col,
+    accessor: col
+  })
+  
+  object[col]=String(syData.var_value[index])
+  
+})
+symbolTableData.push(object)
+const productionColor=(t,nt,i)=>{
   setTerminal(t)
   setNonTerminal(nt)
-  console.log('color')
+  setTokenIndex(i+1)
 }
 const syntaxStep=()=>{
     // if(step<0){
@@ -247,11 +276,29 @@ const syntaxStep=()=>{
         )
         case 2: return(
             <div>
+              <Dialog classes={{
+        paper: classes.dialog
+      }}
+      maxWidth={'lg'}
+      open={stDialog}
+        onClose={() => {
+          setStDialog(false)
+        }}
+      >
+        <Typography variant='h3' className={classes.headText} style={{textAlign:'center'}}>
+             Symbol Table
+      </Typography>
+          <ReactTable 
+          style={{margin:'0px'}}
+         data={symbolTableData} columns={symbolTableColumns}
+         inverted={true}
+         /> 
+              </Dialog>
                 <div style={{position:'fixed',right:'0',top:'8%'}}>
             <TextField style={{backgroundColor:'#DEF2F1',borderRadius:'7px',marginTop:'10px'}} value={compilerInput} disabled={true} onClick={()=>{props.openDialog()}}/>     
             <Button variant="contained"
             color="default"
-            className={classes.button1}>Show Symbol Table</Button></div>
+            className={classes.button1} onClick={()=>setStDialog(true)}>Show Symbol Table</Button></div>
                 <Grid container spacing={3}>
                    <Grid item md={7.2}>
                      <div style={{marginTop:'10px'}}>
@@ -264,7 +311,7 @@ const syntaxStep=()=>{
                           nonTerminal={nonTerminal} parserType={parserType}/></div>
                        }
           <ReactTable columns={tokenListColumns}
-          inverted={true} type={'tokenList'} size={'small'}/>
+          inverted={true} type={'tokenList'} size={'small'} tokenListData={tokenListData} tokenIndex={tokenIndex}/>
                      </div>
                    
                    </Grid>

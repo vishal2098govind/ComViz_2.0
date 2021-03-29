@@ -22,9 +22,16 @@ function Table({ columns, data, props }) {
       <thead>
         {headerGroups.map(headerGroup => (
           <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map(column => (
-              <th {...column.getHeaderProps()}>{column.render('Header')}</th>
-            ))}
+            {headerGroup.headers.map(column => {
+              if(props.type=='tokenList' && props.tokenListData && column.Header==props.tokenListData[props.tokenIndex]){
+                console.log('here')
+                console.log(props.tokenListData[props.tokenIndex])
+                console.log(props.tokenIndex)
+                return <th style={{background:'#80a879'}} {...column.getHeaderProps()}>{column.render('Header')}</th>
+              }else{
+                return <th {...column.getHeaderProps()}>{column.render('Header')}</th>
+              }
+            })}
           </tr>
         ))}
       </thead>
@@ -34,7 +41,7 @@ function Table({ columns, data, props }) {
           return (
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => {
-                if(cell.column.Header==props.terminal && cell.row.values.terminal==props.nonTerminal){
+                if((cell.column.Header==props.terminal && cell.row.values.terminal==props.nonTerminal) ){
                   return <td style={{background:'#80a879'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }else{
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
@@ -52,7 +59,6 @@ function Table({ columns, data, props }) {
 function ReactTable(props) {
     let data=[]
     let columns=[]
-    console.log(props)
     if(props.data && props.columns ){
         data=props.data
         columns=props.columns
@@ -262,7 +268,7 @@ function ReactTable(props) {
 
   return (
     <Styles>
-      <Table columns={columns} data={data} props={props} />
+      <Table columns={columns} data={data} props={props}/>
     </Styles>
   )
 }
