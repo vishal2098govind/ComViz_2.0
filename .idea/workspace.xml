@@ -6,11 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/components/graph.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/graph.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/components/phases/syntax.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/phases/syntax.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/components/visualizer.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/visualizer.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
