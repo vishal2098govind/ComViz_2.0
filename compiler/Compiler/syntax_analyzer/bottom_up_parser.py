@@ -79,6 +79,7 @@ class BUParser:
                 stack.append(pte.value)
                 l += 1
                 self.vpt.visualize_bup_parse_tree(stack, self.vast.bup_ast_digraphs)
+                print(look_ahead)
 
             elif pte.move == 'Reduce':
                 lhs = pte.value.lhs
@@ -104,6 +105,7 @@ class BUParser:
                 stack.append(parent_node)
                 goto = self.parsing_table.get(stack[-2], lhs.node_val)
                 stack.append(goto.value)
+                print(look_ahead)
                 self.vpt.visualize_bup_parse_tree(stack, self.vast.bup_ast_digraphs)
 
             elif pte.move == 'Accept':

@@ -73,7 +73,7 @@ const callBackend=async()=>{
   setLoading(true)
   const form = new FormData();
   form.append('source_code',compilerInput);
-  form.append('continue',setClearST)
+  form.append('clear_symbol_table',setClearST)
   try{
     let response = await Axios({
       method: 'post',
