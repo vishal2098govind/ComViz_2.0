@@ -12,7 +12,7 @@ def submit_source_code(request):
 	if request.method == 'POST':
 		print(str(request.POST.get('source_code')))
 		source_code = request.POST.get('source_code')
-		cont = request.POST.get('continue')
+		cont = request.POST.get('clear_symbol_table')
 		if bool(cont):
 			clear()
 

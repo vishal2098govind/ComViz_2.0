@@ -53,6 +53,7 @@ def comviz(source_code):
                                                                                            parser=tdparser)
 
     buparser = BUParser(lexer_result, ParsingTable(), global_symbol_table, vpt, vast)
+    response["symbol_table"] = global_symbol_table.__repr__()
     if lexer_errors:
         print(lexer_errors.as_string())
         response["lexer_errors"] = lexer_errors.as_string()

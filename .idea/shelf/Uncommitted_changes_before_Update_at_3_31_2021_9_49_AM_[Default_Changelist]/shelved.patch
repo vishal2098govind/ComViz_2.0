@@ -1,0 +1,931 @@
+Index: compiler/Compiler/syntax_analyzer/bottom_up_parser.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># E -> var id = E1       { id.value = E1.value }\r\n#   -> E1 and C          { E.value = E1.value and C.value }\r\n#   -> E1 or C           { E.value = E1.value or C.value }\r\n#   -> C                 { E.value = C.value }\r\n# --------------------------------------------------------------\r\n# C -> not C1            { C.value = !C1.value }\r\n#   -> C1 == Ar          { C.value = C1.value == Ar.value }\r\n#   -> C1 >= Ar          { C.value = C1.value >= Ar.value }\r\n#   -> C1 <= Ar          { C.value = C1.value <= Ar.value }\r\n#   -> C1 < Ar           { C.value = C1.value < Ar.value }\r\n#   -> C1 > Ar           { C.value = C1.value > Ar.value }\r\n#   -> C1 != Ar          { C.value = C1.value != Ar.value }\r\n#   -> Ar                { C.value = Ar.value }\r\n# --------------------------------------------------------------\r\n# Ar -> Ar1 + T          { Ar.value = Ar1.value + T.value }\r\n#    -> Ar1 - T          { Ar.value = Ar1.value - T.value }\r\n#    -> T                { Ar.value = T.value }\r\n# --------------------------------------------------------------\r\n# T  -> T1 * F           { T.value = T1.value * F.value }\r\n#    -> T1 / F           { T.value = T1.value / F.value }\r\n#    -> F                { T.value = F.value }\r\n# --------------------------------------------------------------\r\n# F  -> + P              { F.value = P.value }\r\n#    -> - P              { F.value = -1 * P.value }\r\n#    -> P                { F.value = P.value }\r\n# --------------------------------------------------------------\r\n# P  -> A ^ P1           { P.value = A.value ^ P1.value }\r\n#    -> A                { P.value = A.value }\r\n# --------------------------------------------------------------\r\n# A  -> ( E )            { A.value = E.value }\r\n#    -> int              { A.value = int }\r\n#    -> float            { A.value = float }\r\n#    -> id               { A.value = id.value }\r\n# --------------------------------------------------------------\r\n\r\n\r\nfrom Compiler.syntax_analyzer.node_classes import Error\r\nimport uuid\r\nfrom anytree import AnyNode\r\nfrom Compiler.semantic_analyzer.data_types import Number\r\n\r\n\r\nclass REError:\r\n    def __init__(self, msg):\r\n        self.err_msg = 'Runtime Error: '+ msg\r\n\r\n\r\nclass BUParser:\r\n    def __init__(self, tokens, parsing_table, global_symbol_table, vpt, vast):\r\n        self.tokens = tokens\r\n        self.parsing_table = parsing_table\r\n        self.syntax_error = None\r\n        self.runtime_error = None\r\n        self.digraphs = None\r\n        self.runtime_result = None\r\n        self.symbol_table = global_symbol_table\r\n        self.vpt = vpt\r\n        self.vast = vast\r\n\r\n    def bottom_up_parse(self):\r\n        stack = [1]\r\n        l = 0\r\n        token_list = []\r\n        for token in self.tokens:\r\n            token_name = token.value if token.value is not None else token.type\r\n\r\n            token_node = AnyNode(id=uuid.uuid4(), name=token_name, parser_type=token.parser_type, value=token.type)\r\n            token_list.append(token_node)\r\n\r\n        while True:\r\n            look_ahead = token_list[l]\r\n            state = stack[-1]\r\n            pte = self.parsing_table.get(state, look_ahead.parser_type)\r\n            if isinstance(pte, Error):\r\n                self.syntax_error = pte.msg\r\n                break\r\n            elif pte.move == 'Shift':\r\n                stack.append(look_ahead)\r\n                stack.append(pte.value)\r\n                l += 1\r\n                self.vpt.visualize_bup_parse_tree(stack, self.vast.bup_ast_digraphs)\r\n\r\n            elif pte.move == 'Reduce':\r\n                lhs = pte.value.lhs\r\n                rhs = pte.value.rhs\r\n                parent_node = AnyNode(id=uuid.uuid4(), name=lhs.node_val, value=None, ast_children=None)\r\n                children = []\r\n                node_name = f'eval_{parent_node.name}_node'\r\n                eval_node = getattr(self, node_name)\r\n\r\n                for i in range(2 * len(rhs)):\r\n                    top = stack.pop()\r\n                    if not isinstance(top, int):\r\n                        children.append(top)\r\n                for child in children[::-1]:\r\n                    child.parent = parent_node\r\n                parent_node.value, parent_node.ast_children = eval_node(children[::-1])\r\n                if parent_node.value is None:\r\n                     self.runtime_error = parent_node.ast_children[0].err_msg\r\n                     break\r\n                else:\r\n                    self.runtime_result=parent_node.ast_children[0].value\r\n\r\n                stack.append(parent_node)\r\n                goto = self.parsing_table.get(stack[-2], lhs.node_val)\r\n                stack.append(goto.value)\r\n                self.vpt.visualize_bup_parse_tree(stack, self.vast.bup_ast_digraphs)\r\n\r\n            elif pte.move == 'Accept':\r\n                print('Accepted')\r\n                break\r\n\r\n    def eval_E_node(self, pt_children):\r\n        if len(pt_children) == 3:\r\n\r\n            if pt_children[1].parser_type == 'and':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='and', value=pt_children[0].value and pt_children[2].value,\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return pt_children[0].value and pt_children[2].value, (ast_node,)\r\n\r\n            elif pt_children[1].parser_type == 'or':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='or', value=pt_children[0].value or pt_children[2].value,\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return pt_children[0].value or pt_children[2].value, (ast_node,)\r\n\r\n        elif len(pt_children) == 4:\r\n\r\n            id_node = AnyNode(id=uuid.uuid4(), name=pt_children[1].value, value=pt_children[1].value)\r\n            self.symbol_table.set_var_value(pt_children[1].name, Number(pt_children[3].value))\r\n\r\n            ast_node = AnyNode(id=uuid.uuid4(), name='=', value=pt_children[3].value,\r\n                               children=list(pt_children[3].ast_children)+[id_node])\r\n\r\n            self.vast.visualize_bottom_up_ast(ast_node)\r\n\r\n            return pt_children[3].value, (ast_node,)\r\n\r\n        else:\r\n            if isinstance(pt_children[0].ast_children, REError):\r\n                return pt_children[0].value, pt_children[0].ast_children\r\n            return pt_children[0].value, (pt_children[0].ast_children[0],)\r\n\r\n    def eval_C_node(self, pt_children):\r\n        if len(pt_children) == 2:\r\n            ast_node = AnyNode(id=uuid.uuid4(), name='not', value=not pt_children[1].value,\r\n                               children=[pt_children[0].value, pt_children[1].ast_children])\r\n            self.vast.visualize_bottom_up_ast(ast_node)\r\n            return not pt_children[1].value, (ast_node,)\r\n        elif len(pt_children) == 3:\r\n            if pt_children[1].name == '==':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='==', value=int(pt_children[0].value == pt_children[2].value),\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].value == pt_children[2].value), (ast_node,)\r\n            elif pt_children[1].name == '>=':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='>=', value=int(pt_children[0].value >= pt_children[2].value),\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].value >= pt_children[2].value), (ast_node,)\r\n            elif pt_children[1].name == '<=':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='<=', value=int(pt_children[0].value <= pt_children[2].value),\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].value <= pt_children[2].value), (ast_node,)\r\n            elif pt_children[1].value == '<':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='<', value=int(pt_children[0].value < pt_children[2].value),\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].value < pt_children[2].value), (ast_node,)\r\n            elif pt_children[1].name == '>':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='>', value=int(pt_children[0].value > pt_children[2].value),\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].value > pt_children[2].value), (ast_node,)\r\n            elif pt_children[1].name == '!=':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='!=', value=int(pt_children[0].value != pt_children[2].value),\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].value != pt_children[2].value), (ast_node,)\r\n        else:\r\n            if isinstance(pt_children[0].ast_children, REError):\r\n                return pt_children[0].value, pt_children[0].ast_children\r\n            return pt_children[0].value, (pt_children[0].ast_children[0],)\r\n\r\n    def eval_Ar_node(self, pt_children):\r\n        if len(pt_children) == 3:\r\n            if pt_children[1].value == '+':\r\n                ast_node = AnyNode(\r\n                    id=uuid.uuid4(), name='+', value=pt_children[0].value + pt_children[2].value,\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return pt_children[0].value + pt_children[2].value, (ast_node,)\r\n            elif pt_children[1].value == '-':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='-', value=pt_children[0].value - pt_children[2].value,\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return pt_children[0].value - pt_children[2].value, (ast_node,)\r\n        else:\r\n            if isinstance(pt_children[0].ast_children, REError):\r\n                return pt_children[0].value, pt_children[0].ast_children\r\n            return pt_children[0].value, (pt_children[0].ast_children[0],)\r\n\r\n    def eval_T_node(self, pt_children):\r\n        if len(pt_children) == 3:\r\n            if pt_children[1].value == '*':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='*', value=pt_children[0].value * pt_children[2].value,\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return pt_children[0].value * pt_children[2].value, (ast_node,)\r\n            elif pt_children[1].value == '/':\r\n                if pt_children[2].value == 0:\r\n                    return None, (REError('Division by Zero'),)\r\n                ast_node = AnyNode(id=uuid.uuid4(), name='/', value=pt_children[0].value / pt_children[2].value,\r\n                                   children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return pt_children[0].value / pt_children[2].value, (ast_node,)\r\n        else:\r\n            return pt_children[0].value, (pt_children[0].ast_children[0],)\r\n\r\n    def eval_F_node(self, pt_children):\r\n        if len(pt_children) == 2:\r\n            if pt_children[0].value == '-':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[1].value, value=-1 * pt_children[1].value,\r\n                                   children=pt_children[1].ast_children)\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return -1 * pt_children[1].value, (ast_node,)\r\n            ast_node = AnyNode(id=uuid.uuid4(), value=pt_children[1].value, name=pt_children[1].value,\r\n                               children=pt_children[1].ast_children)\r\n            self.vast.visualize_bottom_up_ast(ast_node)\r\n            return pt_children[1].value, (ast_node,)\r\n        else:\r\n            return pt_children[0].value, (pt_children[0].ast_children[0],)\r\n\r\n    def eval_P_node(self, pt_children):\r\n        if len(pt_children) == 3:\r\n            ast_node = AnyNode(id=uuid.uuid4(), value=pt_children[0].value ** pt_children[2].value, name='^',\r\n                               children=pt_children[0].ast_children + pt_children[2].ast_children)\r\n            self.vast.visualize_bottom_up_ast(ast_node)\r\n            return pt_children[0].value ** pt_children[2].value, (ast_node,)\r\n        else:\r\n            return pt_children[0].value, (pt_children[0].ast_children[0],)\r\n\r\n    def eval_A_node(self, pt_children):\r\n        if len(pt_children) == 3:\r\n            ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[1].value, value=pt_children[1].value,\r\n                               children=pt_children[1].ast_children)\r\n            self.vast.visualize_bottom_up_ast(ast_node)\r\n            return pt_children[1].value, (ast_node,)\r\n        else:\r\n            if pt_children[0].value == 'int':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[0].name, value=int(pt_children[0].name),\r\n                                   children=())\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return int(pt_children[0].name), (ast_node,)\r\n            elif pt_children[0].value == 'float':\r\n                ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[0].name, value=float(pt_children[0].name),\r\n                                   children=())\r\n                self.vast.visualize_bottom_up_ast(ast_node)\r\n                return float(pt_children[0].name), (ast_node,)\r\n            elif pt_children[0].value == 'id':\r\n                value = self.symbol_table.get_var_value(pt_children[0].name)\r\n                if value is not None:\r\n                    ast_node = AnyNode(id=uuid.uuid4(), name=pt_children[0].name, value=value.number_value, children=())\r\n                    return value.number_value, (ast_node,)\r\n                else:\r\n                    return None, (REError(f'{pt_children[0].name} is not defined'), )
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/compiler/Compiler/syntax_analyzer/bottom_up_parser.py b/compiler/Compiler/syntax_analyzer/bottom_up_parser.py
+--- a/compiler/Compiler/syntax_analyzer/bottom_up_parser.py	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ b/compiler/Compiler/syntax_analyzer/bottom_up_parser.py	(date 1617164200550)
+@@ -79,6 +79,7 @@
+                 stack.append(pte.value)
+                 l += 1
+                 self.vpt.visualize_bup_parse_tree(stack, self.vast.bup_ast_digraphs)
++                print(look_ahead)
+ 
+             elif pte.move == 'Reduce':
+                 lhs = pte.value.lhs
+@@ -104,6 +105,7 @@
+                 stack.append(parent_node)
+                 goto = self.parsing_table.get(stack[-2], lhs.node_val)
+                 stack.append(goto.value)
++                print(look_ahead)
+                 self.vpt.visualize_bup_parse_tree(stack, self.vast.bup_ast_digraphs)
+ 
+             elif pte.move == 'Accept':
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,157 +0,0 @@
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/viz.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/viz.html\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/viz2.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/viz2.html\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"bottom_up_parser\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"lexer\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"node_classes\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"parsing_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.lexer\" />\r\n        <item itemvalue=\"Python.bottom_up_parser\" />\r\n        <item itemvalue=\"Python.parsing_table\" />\r\n        <item itemvalue=\"Python.node_classes\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py</url>\r\n          <line>84</line>\r\n          <option name=\"timeStamp\" value=\"12\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>\r\n          <line>33</line>\r\n          <option name=\"timeStamp\" value=\"15\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>\r\n          <line>191</line>\r\n          <option name=\"timeStamp\" value=\"16\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision 616eff6002a0cb37946d540cde7c426b7a440194)
+-+++ b/.idea/workspace.xml	(date 1616132289660)
+-@@ -6,12 +6,8 @@
+-   <component name="ChangeListManager">
+-     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+-+      <change beforePath="$PROJECT_DIR$/backend/comviz_api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/comviz_api/views.py" afterDir="false" />
+-       <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/viz.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz.html" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/viz2.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz2.html" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+-@@ -26,6 +22,11 @@
+-     </option>
+-   </component>
+-   <component name="Git.Settings">
+-+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+-+      <map>
+-+        <entry key="$PROJECT_DIR$" value="main" />
+-+      </map>
+-+    </option>
+-     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+-   </component>
+-   <component name="GitSEFilterConfiguration">
+-@@ -38,6 +39,29 @@
+-   </component>
+-   <component name="GitToolBoxStore">
+-     <option name="projectConfigVersion" value="2" />
+-+    <option name="recentBranches">
+-+      <RecentBranches>
+-+        <option name="branchesForRepo">
+-+          <list>
+-+            <RecentBranchesForRepo>
+-+              <option name="branches">
+-+                <list>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="ashu_comviz" />
+-+                    <option name="lastUsedInstant" value="1616131999" />
+-+                  </RecentBranch>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="main" />
+-+                    <option name="lastUsedInstant" value="1616131555" />
+-+                  </RecentBranch>
+-+                </list>
+-+              </option>
+-+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+-+            </RecentBranchesForRepo>
+-+          </list>
+-+        </option>
+-+      </RecentBranches>
+-+    </option>
+-   </component>
+-   <component name="ProjectId" id="1oZUZieMlYOsZjABWEfRkataDhm" />
+-   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+-@@ -224,19 +248,9 @@
+-           <option name="timeStamp" value="4" />
+-         </line-breakpoint>
+-         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+--          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py</url>
+--          <line>84</line>
+--          <option name="timeStamp" value="12" />
+--        </line-breakpoint>
+--        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+-           <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>
+-           <line>33</line>
+-           <option name="timeStamp" value="15" />
+--        </line-breakpoint>
+--        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+--          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>
+--          <line>191</line>
+--          <option name="timeStamp" value="16" />
+-         </line-breakpoint>
+-       </breakpoints>
+-       <default-breakpoints>
+-Index: backend/comviz_api/views.py
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>from django.shortcuts import render\r\nfrom django.http import HttpResponse, JsonResponse\r\n\r\nimport sys,os\r\nimport json\r\n\r\nsys.path.insert(1, '../compiler')\r\n\r\nfrom shell import comviz\r\n\r\ndef submit_source_code(request):\r\n\tif request.method == 'POST':\r\n\t\tprint(str(request.POST.get('source_code')))\r\n\t\tsource_code = request.POST.get('source_code')\r\n\t\tresult = comviz(source_code)\r\n\t\tprint(\"Final Result \"+str(result))\r\n\t\treturn JsonResponse(result)\r\n\telse:\r\n\t\treturn HttpResponse(\"Method Not Allowed\",status=405)
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/backend/comviz_api/views.py b/backend/comviz_api/views.py
+---- a/backend/comviz_api/views.py	(revision 616eff6002a0cb37946d540cde7c426b7a440194)
+-+++ b/backend/comviz_api/views.py	(date 1616131986476)
+-@@ -6,14 +6,18 @@
+- 
+- sys.path.insert(1, '../compiler')
+- 
+--from shell import comviz
+-+from shell import comviz, clear
+- 
+- def submit_source_code(request):
+- 	if request.method == 'POST':
+- 		print(str(request.POST.get('source_code')))
+- 		source_code = request.POST.get('source_code')
+-+		cont = request.POST.get('continue')
+-+		if bool(cont):
+-+			clear()
+-+
+- 		result = comviz(source_code)
+--		print("Final Result "+str(result))
+-+		# print("Final Result "+str(result))
+- 		return JsonResponse(result)
+- 	else:
+- 		return HttpResponse("Method Not Allowed",status=405)
+-\ No newline at end of file
+-Index: compiler/shell.py
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>import json\r\n\r\nfrom Compiler.run import run, global_symbol_table\r\nfrom Visualizer.visualize_pt import pt_digraphs, bupt_digraphs\r\nfrom Compiler.syntax_analyzer.bottom_up_parser import BUParser\r\nfrom Compiler.syntax_analyzer.parsing_table import ParsingTable\r\n\r\nresponse = {\r\n    \"tokens\": None,\r\n    \"lexer_errors\": None,\r\n    \"top_down_digraphs\": None,\r\n    \"top_down_syntax_errors\": None,\r\n    \"top_down_evaluation_result\": None,\r\n    \"top_down_runtime_error\": None,\r\n    \"symbol_table\": None,\r\n    \"bottom_up_digraphs\": None,\r\n    \"bottom_up_syntax_errors\": None,\r\n    \"bottom_up_evaluation_result\": None,\r\n    \"bottom_up_runtime_error\": None\r\n}\r\n\r\nresult = {\r\n    \"status\": \"\",\r\n    \"data\": None\r\n}\r\n\r\n\r\ndef comviz(source_code):\r\n    lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',\r\n                                                                                           text=source_code)\r\n\r\n    if lexer_errors:\r\n        print(lexer_errors.as_string())\r\n        response[\"lexer_errors\"] = lexer_errors.as_string()\r\n\r\n        result['status'] = 'error'\r\n        result['data'] = response\r\n    else:\r\n        # No lexical errors\r\n        print(lexer_result)\r\n        tokens = []\r\n        for token in lexer_result:\r\n            tokens.append(token.__repr__())\r\n        response[\"tokens\"] = tokens\r\n\r\n        print(\"Bottom Up Parser\")\r\n        buparser = BUParser(lexer_result, ParsingTable(), global_symbol_table)\r\n        buparser.bottom_up_parse()\r\n        buparser.digraphs = bupt_digraphs\r\n        print('Bottom Up Runtime Result :', buparser.runtime_result)\r\n        response[\"bottom_up_digraphs\"] = buparser.digraphs\r\n        response[\"bottom_up_syntax_errors\"] = buparser.syntax_error\r\n        response[\"bottom_up_evaluation_result\"] = buparser.runtime_result\r\n        response[\"bottom_up_runtime_error\"] = buparser.runtime_error\r\n\r\n        if syntax_errors:\r\n            print(syntax_errors.as_string())\r\n            response[\"top_down_syntax_errors\"] = syntax_errors.as_string()\r\n            response[\"top_down_digraphs\"] = pt_digraphs\r\n\r\n            result['status'] = 'error'\r\n            result['data'] = response\r\n        else:\r\n            # No syntax errors\r\n            print(ast_root)\r\n            response[\"top_down_digraphs\"] = pt_digraphs\r\n\r\n            if runtime_errors:\r\n                print(runtime_errors.as_string())\r\n                response[\"top_down_runtime_error\"] = runtime_errors.as_string()\r\n\r\n                result['status'] = 'error'\r\n                result['data'] = response\r\n            else:\r\n                # No runtime errors\r\n                response[\"top_down_runtime_error\"] = None\r\n                response[\"bottom_runtime_error\"] = None\r\n                response[\"top_down_evaluation_result\"] = eval_result.number_value\r\n                response[\"symbol_table\"] = global_symbol_table.__repr__()\r\n                # print(json.dumps(response, indent=4))\r\n                print('Top Down Runtime Result :', eval_result)\r\n\r\n                result['status'] = 'success'\r\n                result['data'] = response\r\n\r\n    return result\r\n\r\n\r\n# comviz(\"TRUE\")\r\n# comviz(\"a\")\r\n# comviz(\"(2^3)^2\")\r\n# comviz(\"a >= 2\")
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/compiler/shell.py b/compiler/shell.py
+---- a/compiler/shell.py	(revision 616eff6002a0cb37946d540cde7c426b7a440194)
+-+++ b/compiler/shell.py	(date 1616131994786)
+-@@ -25,6 +25,21 @@
+- }
+- 
+- 
+-+def clear():
+-+    response["tokens"] = None
+-+    response["lexer_errors"] = None
+-+    response["top_down_digraphs"] = None
+-+    response["top_down_syntax_errors"] = None
+-+    response["top_down_evaluation_result"] = None
+-+    response["top_down_runtime_error"] = None
+-+    response["symbol_table"] = None
+-+    response["bottom_up_digraphs"] = None
+-+    response["bottom_up_syntax_errors"] = None
+-+    response["bottom_up_evaluation_result"] = None
+-+    response["bottom_up_runtime_error"] = None
+-+    print('Cleared response')
+-+
+-+
+- def comviz(source_code):
+-     lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',
+-                                                                                            text=source_code)
+-@@ -89,4 +104,4 @@
+- # comviz("TRUE")
+- # comviz("a")
+- # comviz("(2^3)^2")
+--# comviz("a >= 2")
+-\ No newline at end of file
+-+comviz("1+2")
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,147 +0,0 @@
+-Index: backend/comviz_api/views.py
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>from django.shortcuts import render\r\nfrom django.http import HttpResponse, JsonResponse\r\n\r\nimport sys,os\r\nimport json\r\n\r\nsys.path.insert(1, '../compiler')\r\n\r\nfrom shell import comviz\r\n\r\ndef submit_source_code(request):\r\n\tif request.method == 'POST':\r\n\t\tprint(str(request.POST.get('source_code')))\r\n\t\tsource_code = request.POST.get('source_code')\r\n\t\tresult = comviz(source_code)\r\n\t\tprint(\"Final Result \"+str(result))\r\n\t\treturn JsonResponse(result)\r\n\telse:\r\n\t\treturn HttpResponse(\"Method Not Allowed\",status=405)
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/backend/comviz_api/views.py b/backend/comviz_api/views.py
+---- a/backend/comviz_api/views.py	(revision 9e0fd1e3d07d555fa56253b16b547e6166d924c3)
+-+++ b/backend/comviz_api/views.py	(date 1616131927095)
+-@@ -6,14 +6,18 @@
+- 
+- sys.path.insert(1, '../compiler')
+- 
+--from shell import comviz
+-+from shell import comviz, clear
+- 
+- def submit_source_code(request):
+- 	if request.method == 'POST':
+- 		print(str(request.POST.get('source_code')))
+- 		source_code = request.POST.get('source_code')
+-+		cont = request.POST.get('continue')
+-+		if bool(cont):
+-+			clear()
+-+
+- 		result = comviz(source_code)
+--		print("Final Result "+str(result))
+-+		# print("Final Result "+str(result))
+- 		return JsonResponse(result)
+- 	else:
+- 		return HttpResponse("Method Not Allowed",status=405)
+-\ No newline at end of file
+-Index: compiler/shell.py
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>import json\r\n\r\nfrom Compiler.run import run, global_symbol_table\r\nfrom Visualizer.visualize_pt import pt_digraphs, bupt_digraphs\r\nfrom Compiler.syntax_analyzer.bottom_up_parser import BUParser\r\nfrom Compiler.syntax_analyzer.parsing_table import ParsingTable\r\n\r\nresponse = {\r\n    \"tokens\": None,\r\n    \"lexer_errors\": None,\r\n    \"top_down_digraphs\": None,\r\n    \"top_down_syntax_errors\": None,\r\n    \"top_down_evaluation_result\": None,\r\n    \"top_down_runtime_error\": None,\r\n    \"symbol_table\": None,\r\n    \"bottom_up_digraphs\": None,\r\n    \"bottom_up_syntax_errors\": None,\r\n    \"bottom_up_evaluation_result\": None,\r\n    \"bottom_up_runtime_error\": None\r\n}\r\n\r\nresult = {\r\n    \"status\": \"\",\r\n    \"data\": None\r\n}\r\n\r\n\r\ndef comviz(source_code):\r\n    lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',\r\n                                                                                           text=source_code)\r\n\r\n    if lexer_errors:\r\n        print(lexer_errors.as_string())\r\n        response[\"lexer_errors\"] = lexer_errors.as_string()\r\n\r\n        result['status'] = 'error'\r\n        result['data'] = response\r\n    else:\r\n        # No lexical errors\r\n        print(lexer_result)\r\n        tokens = []\r\n        for token in lexer_result:\r\n            tokens.append(token.__repr__())\r\n        response[\"tokens\"] = tokens\r\n\r\n        print(\"Bottom Up Parser\")\r\n        buparser = BUParser(lexer_result, ParsingTable(), global_symbol_table)\r\n        buparser.bottom_up_parse()\r\n        buparser.digraphs = bupt_digraphs\r\n        print('Bottom Up Runtime Result :', buparser.runtime_result)\r\n        response[\"bottom_up_digraphs\"] = buparser.digraphs\r\n        response[\"bottom_up_syntax_errors\"] = buparser.syntax_error\r\n        response[\"bottom_up_evaluation_result\"] = buparser.runtime_result\r\n        response[\"bottom_up_runtime_error\"] = buparser.runtime_error\r\n\r\n        if syntax_errors:\r\n            print(syntax_errors.as_string())\r\n            response[\"top_down_syntax_errors\"] = syntax_errors.as_string()\r\n            response[\"top_down_digraphs\"] = pt_digraphs\r\n\r\n            result['status'] = 'error'\r\n            result['data'] = response\r\n        else:\r\n            # No syntax errors\r\n            print(ast_root)\r\n            response[\"top_down_digraphs\"] = pt_digraphs\r\n\r\n            if runtime_errors:\r\n                print(runtime_errors.as_string())\r\n                response[\"top_down_runtime_error\"] = runtime_errors.as_string()\r\n\r\n                result['status'] = 'error'\r\n                result['data'] = response\r\n            else:\r\n                # No runtime errors\r\n                response[\"top_down_runtime_error\"] = None\r\n                response[\"bottom_runtime_error\"] = None\r\n                response[\"top_down_evaluation_result\"] = eval_result.number_value\r\n                response[\"symbol_table\"] = global_symbol_table.__repr__()\r\n                # print(json.dumps(response, indent=4))\r\n                print('Top Down Runtime Result :', eval_result)\r\n\r\n                result['status'] = 'success'\r\n                result['data'] = response\r\n\r\n    return result\r\n\r\n\r\n# comviz(\"TRUE\")\r\n# comviz(\"a\")\r\n# comviz(\"(2^3)^2\")\r\ncomviz(\"1+2\")
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/compiler/shell.py b/compiler/shell.py
+---- a/compiler/shell.py	(revision 9e0fd1e3d07d555fa56253b16b547e6166d924c3)
+-+++ b/compiler/shell.py	(date 1616131927101)
+-@@ -25,6 +25,21 @@
+- }
+- 
+- 
+-+def clear():
+-+    response["tokens"] = None
+-+    response["lexer_errors"] = None
+-+    response["top_down_digraphs"] = None
+-+    response["top_down_syntax_errors"] = None
+-+    response["top_down_evaluation_result"] = None
+-+    response["top_down_runtime_error"] = None
+-+    response["symbol_table"] = None
+-+    response["bottom_up_digraphs"] = None
+-+    response["bottom_up_syntax_errors"] = None
+-+    response["bottom_up_evaluation_result"] = None
+-+    response["bottom_up_runtime_error"] = None
+-+    print('Cleared response')
+-+
+-+
+- def comviz(source_code):
+-     lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',
+-                                                                                            text=source_code)
+-@@ -89,4 +104,4 @@
+- # comviz("TRUE")
+- # comviz("a")
+- # comviz("(2^3)^2")
+--comviz("1+2")
+-\ No newline at end of file
+-+comviz("1+2")
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/viz.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/viz.html\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"bottom_up_parser\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"lexer\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"node_classes\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"parsing_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.lexer\" />\r\n        <item itemvalue=\"Python.bottom_up_parser\" />\r\n        <item itemvalue=\"Python.parsing_table\" />\r\n        <item itemvalue=\"Python.node_classes\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>\r\n          <line>33</line>\r\n          <option name=\"timeStamp\" value=\"15\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>\r\n          <line>191</line>\r\n          <option name=\"timeStamp\" value=\"16\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision 9e0fd1e3d07d555fa56253b16b547e6166d924c3)
+-+++ b/.idea/workspace.xml	(date 1616131927438)
+-@@ -6,10 +6,8 @@
+-   <component name="ChangeListManager">
+-     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+-+      <change beforePath="$PROJECT_DIR$/backend/comviz_api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/comviz_api/views.py" afterDir="false" />
+-       <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/viz.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz.html" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+-@@ -24,6 +22,11 @@
+-     </option>
+-   </component>
+-   <component name="Git.Settings">
+-+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+-+      <map>
+-+        <entry key="$PROJECT_DIR$" value="ashu_comviz" />
+-+      </map>
+-+    </option>
+-     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+-   </component>
+-   <component name="GitSEFilterConfiguration">
+-@@ -36,6 +39,29 @@
+-   </component>
+-   <component name="GitToolBoxStore">
+-     <option name="projectConfigVersion" value="2" />
+-+    <option name="recentBranches">
+-+      <RecentBranches>
+-+        <option name="branchesForRepo">
+-+          <list>
+-+            <RecentBranchesForRepo>
+-+              <option name="branches">
+-+                <list>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="main" />
+-+                    <option name="lastUsedInstant" value="1616131555" />
+-+                  </RecentBranch>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="ashu_comviz" />
+-+                    <option name="lastUsedInstant" value="1615999002" />
+-+                  </RecentBranch>
+-+                </list>
+-+              </option>
+-+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+-+            </RecentBranchesForRepo>
+-+          </list>
+-+        </option>
+-+      </RecentBranches>
+-+    </option>
+-   </component>
+-   <component name="ProjectId" id="1oZUZieMlYOsZjABWEfRkataDhm" />
+-   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+-@@ -225,11 +251,6 @@
+-           <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>
+-           <line>33</line>
+-           <option name="timeStamp" value="15" />
+--        </line-breakpoint>
+--        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+--          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>
+--          <line>191</line>
+--          <option name="timeStamp" value="16" />
+-         </line-breakpoint>
+-       </breakpoints>
+-       <default-breakpoints>
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM__Default_Changelist_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM__Default_Changelist_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM__Default_Changelist_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM__Default_Changelist_.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]" date="1616000806550" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 3/17/2021 10:36 PM [Default Changelist]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM__Default_Changelist_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM__Default_Changelist_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM__Default_Changelist_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM__Default_Changelist_.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]" date="1616131998247" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 3/19/2021 11:03 AM [Default Changelist]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,200 +0,0 @@
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/backend/main_app/settings.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/backend/main_app/settings.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.shell\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision a9f94c89652feeacf6e838d2798f8b3018f263bb)
+-+++ b/.idea/workspace.xml	(date 1616000672636)
+-@@ -1,10 +1,12 @@
+- <?xml version="1.0" encoding="UTF-8"?>
+- <project version="4">
+-+  <component name="AutoImportSettings">
+-+    <option name="autoReloadType" value="SELECTIVE" />
+-+  </component>
+-   <component name="ChangeListManager">
+-     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
+-+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_2_24_2021_12_54_PM__Default_Changelist_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_2_24_2021_12_54_PM__Default_Changelist_.xml" afterDir="false" />
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/backend/main_app/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main_app/settings.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+-@@ -19,6 +21,11 @@
+-     </option>
+-   </component>
+-   <component name="Git.Settings">
+-+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+-+      <map>
+-+        <entry key="$PROJECT_DIR$" value="main" />
+-+      </map>
+-+    </option>
+-     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+-   </component>
+-   <component name="GitSEFilterConfiguration">
+-@@ -31,6 +38,29 @@
+-   </component>
+-   <component name="GitToolBoxStore">
+-     <option name="projectConfigVersion" value="2" />
+-+    <option name="recentBranches">
+-+      <RecentBranches>
+-+        <option name="branchesForRepo">
+-+          <list>
+-+            <RecentBranchesForRepo>
+-+              <option name="branches">
+-+                <list>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="ashu_comviz" />
+-+                    <option name="lastUsedInstant" value="1615999002" />
+-+                  </RecentBranch>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="main" />
+-+                    <option name="lastUsedInstant" value="1615968388" />
+-+                  </RecentBranch>
+-+                </list>
+-+              </option>
+-+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+-+            </RecentBranchesForRepo>
+-+          </list>
+-+        </option>
+-+      </RecentBranches>
+-+    </option>
+-   </component>
+-   <component name="ProjectId" id="1oZUZieMlYOsZjABWEfRkataDhm" />
+-   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+-@@ -49,6 +79,27 @@
+-     </key>
+-   </component>
+-   <component name="RunManager" selected="Python.shell">
+-+    <configuration name="bottom_up_parser" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+-+      <module name="ComViZ_2.0" />
+-+      <option name="INTERPRETER_OPTIONS" value="" />
+-+      <option name="PARENT_ENVS" value="true" />
+-+      <envs>
+-+        <env name="PYTHONUNBUFFERED" value="1" />
+-+      </envs>
+-+      <option name="SDK_HOME" value="" />
+-+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer" />
+-+      <option name="IS_MODULE_SDK" value="true" />
+-+      <option name="ADD_CONTENT_ROOTS" value="true" />
+-+      <option name="ADD_SOURCE_ROOTS" value="true" />
+-+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" />
+-+      <option name="PARAMETERS" value="" />
+-+      <option name="SHOW_COMMAND_LINE" value="false" />
+-+      <option name="EMULATE_TERMINAL" value="false" />
+-+      <option name="MODULE_MODE" value="false" />
+-+      <option name="REDIRECT_INPUT" value="false" />
+-+      <option name="INPUT_FILE" value="" />
+-+      <method v="2" />
+-+    </configuration>
+-     <configuration name="jsonPython" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+-       <module name="ComViZ_2.0" />
+-       <option name="INTERPRETER_OPTIONS" value="" />
+-@@ -70,7 +121,70 @@
+-       <option name="INPUT_FILE" value="" />
+-       <method v="2" />
+-     </configuration>
+--    <configuration name="shell" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+-+    <configuration name="lexer" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+-+      <module name="ComViZ_2.0" />
+-+      <option name="INTERPRETER_OPTIONS" value="" />
+-+      <option name="PARENT_ENVS" value="true" />
+-+      <envs>
+-+        <env name="PYTHONUNBUFFERED" value="1" />
+-+      </envs>
+-+      <option name="SDK_HOME" value="" />
+-+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer" />
+-+      <option name="IS_MODULE_SDK" value="true" />
+-+      <option name="ADD_CONTENT_ROOTS" value="true" />
+-+      <option name="ADD_SOURCE_ROOTS" value="true" />
+-+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py" />
+-+      <option name="PARAMETERS" value="" />
+-+      <option name="SHOW_COMMAND_LINE" value="false" />
+-+      <option name="EMULATE_TERMINAL" value="false" />
+-+      <option name="MODULE_MODE" value="false" />
+-+      <option name="REDIRECT_INPUT" value="false" />
+-+      <option name="INPUT_FILE" value="" />
+-+      <method v="2" />
+-+    </configuration>
+-+    <configuration name="node_classes" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+-+      <module name="ComViZ_2.0" />
+-+      <option name="INTERPRETER_OPTIONS" value="" />
+-+      <option name="PARENT_ENVS" value="true" />
+-+      <envs>
+-+        <env name="PYTHONUNBUFFERED" value="1" />
+-+      </envs>
+-+      <option name="SDK_HOME" value="" />
+-+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer" />
+-+      <option name="IS_MODULE_SDK" value="true" />
+-+      <option name="ADD_CONTENT_ROOTS" value="true" />
+-+      <option name="ADD_SOURCE_ROOTS" value="true" />
+-+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py" />
+-+      <option name="PARAMETERS" value="" />
+-+      <option name="SHOW_COMMAND_LINE" value="false" />
+-+      <option name="EMULATE_TERMINAL" value="false" />
+-+      <option name="MODULE_MODE" value="false" />
+-+      <option name="REDIRECT_INPUT" value="false" />
+-+      <option name="INPUT_FILE" value="" />
+-+      <method v="2" />
+-+    </configuration>
+-+    <configuration name="parsing_table" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+-+      <module name="ComViZ_2.0" />
+-+      <option name="INTERPRETER_OPTIONS" value="" />
+-+      <option name="PARENT_ENVS" value="true" />
+-+      <envs>
+-+        <env name="PYTHONUNBUFFERED" value="1" />
+-+      </envs>
+-+      <option name="SDK_HOME" value="" />
+-+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer" />
+-+      <option name="IS_MODULE_SDK" value="true" />
+-+      <option name="ADD_CONTENT_ROOTS" value="true" />
+-+      <option name="ADD_SOURCE_ROOTS" value="true" />
+-+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py" />
+-+      <option name="PARAMETERS" value="" />
+-+      <option name="SHOW_COMMAND_LINE" value="false" />
+-+      <option name="EMULATE_TERMINAL" value="false" />
+-+      <option name="MODULE_MODE" value="false" />
+-+      <option name="REDIRECT_INPUT" value="false" />
+-+      <option name="INPUT_FILE" value="" />
+-+      <method v="2" />
+-+    </configuration>
+-+    <configuration name="shell" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+-       <module name="ComViZ_2.0" />
+-       <option name="INTERPRETER_OPTIONS" value="" />
+-       <option name="PARENT_ENVS" value="true" />
+-@@ -93,7 +207,10 @@
+-     </configuration>
+-     <recent_temporary>
+-       <list>
+--        <item itemvalue="Python.shell" />
+-+        <item itemvalue="Python.lexer" />
+-+        <item itemvalue="Python.bottom_up_parser" />
+-+        <item itemvalue="Python.parsing_table" />
+-+        <item itemvalue="Python.node_classes" />
+-         <item itemvalue="Python.jsonPython" />
+-       </list>
+-     </recent_temporary>
+-@@ -129,7 +246,19 @@
+-           <line>122</line>
+-           <option name="timeStamp" value="4" />
+-         </line-breakpoint>
+-+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+-+          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>
+-+          <line>33</line>
+-+          <option name="timeStamp" value="15" />
+-+        </line-breakpoint>
+-       </breakpoints>
+-+      <default-breakpoints>
+-+        <breakpoint type="python-exception">
+-+          <properties notifyOnTerminate="true" exception="BaseException">
+-+            <option name="notifyOnTerminate" value="true" />
+-+          </properties>
+-+        </breakpoint>
+-+      </default-breakpoints>
+-     </breakpoint-manager>
+-   </component>
+- </project>
+-\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,144 +0,0 @@
+-Index: backend/comviz_api/views.py
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>from django.shortcuts import render\r\nfrom django.http import HttpResponse, JsonResponse\r\n\r\nimport sys,os\r\nimport json\r\n\r\nsys.path.insert(1, '../compiler')\r\n\r\nfrom shell import comviz\r\n\r\ndef submit_source_code(request):\r\n\tif request.method == 'POST':\r\n\t\tprint(str(request.POST.get('source_code')))\r\n\t\tsource_code = request.POST.get('source_code')\r\n\t\tresult = comviz(source_code)\r\n\t\tprint(\"Final Result \"+str(result))\r\n\t\treturn JsonResponse(result)\r\n\telse:\r\n\t\treturn HttpResponse(\"Method Not Allowed\",status=405)
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/backend/comviz_api/views.py b/backend/comviz_api/views.py
+---- a/backend/comviz_api/views.py	(revision 616eff6002a0cb37946d540cde7c426b7a440194)
+-+++ b/backend/comviz_api/views.py	(date 1616005691965)
+-@@ -12,8 +12,12 @@
+- 	if request.method == 'POST':
+- 		print(str(request.POST.get('source_code')))
+- 		source_code = request.POST.get('source_code')
+-+		cont = request.POST.get('continue')
+-+		if bool(cont):
+-+			print('BACKEND:', cont)
+-+
+- 		result = comviz(source_code)
+--		print("Final Result "+str(result))
+-+		# print("Final Result "+str(result))
+- 		return JsonResponse(result)
+- 	else:
+- 		return HttpResponse("Method Not Allowed",status=405)
+-\ No newline at end of file
+-Index: compiler/Visualizer/visualize_pt.py
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>from anytree import AnyNode, RenderTree\r\nfrom anytree.exporter import UniqueDotExporter\r\n\r\nfrom Visualizer.visualize_ast import ast_digraphs\r\n\r\nfrom Visualizer.visualize_ast import bup_ast_digraphs\r\n\r\npt_digraphs = []\r\ntest = []\r\n\r\ndef visualize_parse_tree(trace, row=None, col=None):\r\n    global pt_digraphs\r\n    if trace:\r\n        dgi = ''\r\n        for line in UniqueDotExporter(trace[0], nodenamefunc=lambda node: node.id,\r\n                                      nodeattrfunc=lambda node: f\"label={node.name}\"):\r\n            if 'digraph' in line:\r\n                dgi += 'digraph tree {' \\\r\n                       'graph [rankdir=TB]' \\\r\n                        'node [style=\"filled\"]'\r\n            elif 'label' in line:\r\n                dgi += line[:-2] + ' fillcolor=\"#F3DE8A\"' + '];'\r\n            else:\r\n                dgi += line\r\n        dgi = dgi[:-1] + ''.join(ast_digraphs) + '}'\r\n        test.append([dgi])\r\n        # print(test)\r\n        # print('----------------------------')\r\n        # pt_digraphs.append({\r\n        #     'digraph': [dgi],\r\n        #     'index': {\r\n        #         'row': row,\r\n        #         'col': col\r\n        #     }\r\n        # })\r\n        pt_digraphs.append([dgi])\r\n\r\n\r\nbupt_digraphs = []\r\n\r\n\r\ndef visualize_bup_parse_tree(stack):\r\n    global bupt_digraphs\r\n    if stack:\r\n        dgi = 'digraph tree {' \\\r\n              'graph [rankdir=TB]' \\\r\n              'node [style=\"filled\"]'\r\n        for item in stack:\r\n            if isinstance(item, AnyNode):\r\n                for line in UniqueDotExporter(item):\r\n                    if 'digraph' not in line and '}' not in line:\r\n                        if 'label' in line.strip():\r\n                            dgi += line.strip()[:-2] + ' fillcolor=\"#F3DE8A\"' + '];'\r\n                        else:\r\n                            dgi += line.strip()\r\n        dgi += ''.join(bup_ast_digraphs) + '}'\r\n        bupt_digraphs.append([dgi])\r\n        # print(bupt_digraphs)\r\n        print('-----------------------')\r\n
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/compiler/Visualizer/visualize_pt.py b/compiler/Visualizer/visualize_pt.py
+---- a/compiler/Visualizer/visualize_pt.py	(revision 616eff6002a0cb37946d540cde7c426b7a440194)
+-+++ b/compiler/Visualizer/visualize_pt.py	(date 1616001052400)
+-@@ -26,14 +26,14 @@
+-         test.append([dgi])
+-         # print(test)
+-         # print('----------------------------')
+--        # pt_digraphs.append({
+--        #     'digraph': [dgi],
+--        #     'index': {
+--        #         'row': row,
+--        #         'col': col
+--        #     }
+--        # })
+--        pt_digraphs.append([dgi])
+-+        pt_digraphs.append({
+-+            'digraph': [dgi],
+-+            'index': {
+-+                'row': row,
+-+                'col': col
+-+            }
+-+        })
+-+        # pt_digraphs.append([dgi])
+- 
+- 
+- bupt_digraphs = []
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/viz.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/viz.html\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/viz2.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/viz2.html\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"bottom_up_parser\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"lexer\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"node_classes\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"parsing_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.lexer\" />\r\n        <item itemvalue=\"Python.bottom_up_parser\" />\r\n        <item itemvalue=\"Python.parsing_table\" />\r\n        <item itemvalue=\"Python.node_classes\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py</url>\r\n          <line>84</line>\r\n          <option name=\"timeStamp\" value=\"12\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>\r\n          <line>33</line>\r\n          <option name=\"timeStamp\" value=\"15\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>\r\n          <line>191</line>\r\n          <option name=\"timeStamp\" value=\"16\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision 616eff6002a0cb37946d540cde7c426b7a440194)
+-+++ b/.idea/workspace.xml	(date 1616095820797)
+-@@ -6,12 +6,8 @@
+-   <component name="ChangeListManager">
+-     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" afterDir="false" />
+-+      <change beforePath="$PROJECT_DIR$/backend/comviz_api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/comviz_api/views.py" afterDir="false" />
+-       <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/viz.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz.html" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/viz2.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz2.html" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+-@@ -26,6 +22,11 @@
+-     </option>
+-   </component>
+-   <component name="Git.Settings">
+-+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+-+      <map>
+-+        <entry key="$PROJECT_DIR$" value="ashu_comviz" />
+-+      </map>
+-+    </option>
+-     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+-   </component>
+-   <component name="GitSEFilterConfiguration">
+-@@ -38,6 +39,29 @@
+-   </component>
+-   <component name="GitToolBoxStore">
+-     <option name="projectConfigVersion" value="2" />
+-+    <option name="recentBranches">
+-+      <RecentBranches>
+-+        <option name="branchesForRepo">
+-+          <list>
+-+            <RecentBranchesForRepo>
+-+              <option name="branches">
+-+                <list>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="ashu_comviz" />
+-+                    <option name="lastUsedInstant" value="1615999002" />
+-+                  </RecentBranch>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="main" />
+-+                    <option name="lastUsedInstant" value="1615968388" />
+-+                  </RecentBranch>
+-+                </list>
+-+              </option>
+-+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+-+            </RecentBranchesForRepo>
+-+          </list>
+-+        </option>
+-+      </RecentBranches>
+-+    </option>
+-   </component>
+-   <component name="ProjectId" id="1oZUZieMlYOsZjABWEfRkataDhm" />
+-   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+-@@ -224,19 +248,9 @@
+-           <option name="timeStamp" value="4" />
+-         </line-breakpoint>
+-         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+--          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py</url>
+--          <line>84</line>
+--          <option name="timeStamp" value="12" />
+--        </line-breakpoint>
+--        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+-           <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>
+-           <line>33</line>
+-           <option name="timeStamp" value="15" />
+--        </line-breakpoint>
+--        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+--          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>
+--          <line>191</line>
+--          <option name="timeStamp" value="16" />
+-         </line-breakpoint>
+-       </breakpoints>
+-       <default-breakpoints>
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM__Default_Changelist_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM__Default_Changelist_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM__Default_Changelist_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM__Default_Changelist_.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]" date="1616132496738" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 3/19/2021 11:11 AM [Default Changelist]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM__Default_Changelist_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM__Default_Changelist_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM__Default_Changelist_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM__Default_Changelist_.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]" date="1615999001506" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 3/17/2021 10:03 PM [Default Changelist]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,63 +0,0 @@
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/viz.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/viz.html\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"bottom_up_parser\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"lexer\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"node_classes\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"parsing_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.lexer\" />\r\n        <item itemvalue=\"Python.bottom_up_parser\" />\r\n        <item itemvalue=\"Python.parsing_table\" />\r\n        <item itemvalue=\"Python.node_classes\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>\r\n          <line>33</line>\r\n          <option name=\"timeStamp\" value=\"15\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py</url>\r\n          <line>191</line>\r\n          <option name=\"timeStamp\" value=\"16\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision 9e0fd1e3d07d555fa56253b16b547e6166d924c3)
+-+++ b/.idea/workspace.xml	(date 1615969210377)
+-@@ -6,10 +6,6 @@
+-   <component name="ChangeListManager">
+-     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/viz.html" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/viz.html" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+-@@ -24,6 +20,11 @@
+-     </option>
+-   </component>
+-   <component name="Git.Settings">
+-+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+-+      <map>
+-+        <entry key="$PROJECT_DIR$" value="ashu_comviz" />
+-+      </map>
+-+    </option>
+-     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+-   </component>
+-   <component name="GitSEFilterConfiguration">
+-@@ -36,6 +37,29 @@
+-   </component>
+-   <component name="GitToolBoxStore">
+-     <option name="projectConfigVersion" value="2" />
+-+    <option name="recentBranches">
+-+      <RecentBranches>
+-+        <option name="branchesForRepo">
+-+          <list>
+-+            <RecentBranchesForRepo>
+-+              <option name="branches">
+-+                <list>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="main" />
+-+                    <option name="lastUsedInstant" value="1615968388" />
+-+                  </RecentBranch>
+-+                  <RecentBranch>
+-+                    <option name="branchName" value="ashu_comviz" />
+-+                    <option name="lastUsedInstant" value="1615967669" />
+-+                  </RecentBranch>
+-+                </list>
+-+              </option>
+-+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+-+            </RecentBranchesForRepo>
+-+          </list>
+-+        </option>
+-+      </RecentBranches>
+-+    </option>
+-   </component>
+-   <component name="ProjectId" id="1oZUZieMlYOsZjABWEfRkataDhm" />
+-   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,21 +0,0 @@
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.gitignore\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.gitignore\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/backend/comviz_api/views.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/backend/comviz_api/views.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_BRANCH_BY_REPOSITORY\">\r\n      <map>\r\n        <entry key=\"$PROJECT_DIR$\" value=\"ashu_comviz\" />\r\n      </map>\r\n    </option>\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n    <option name=\"recentBranches\">\r\n      <RecentBranches>\r\n        <option name=\"branchesForRepo\">\r\n          <list>\r\n            <RecentBranchesForRepo>\r\n              <option name=\"branches\">\r\n                <list>\r\n                  <RecentBranch>\r\n                    <option name=\"branchName\" value=\"main\" />\r\n                    <option name=\"lastUsedInstant\" value=\"1616132497\" />\r\n                  </RecentBranch>\r\n                  <RecentBranch>\r\n                    <option name=\"branchName\" value=\"ashu_comviz\" />\r\n                    <option name=\"lastUsedInstant\" value=\"1616131999\" />\r\n                  </RecentBranch>\r\n                </list>\r\n              </option>\r\n              <option name=\"repositoryRootUrl\" value=\"file://$PROJECT_DIR$\" />\r\n            </RecentBranchesForRepo>\r\n          </list>\r\n        </option>\r\n      </RecentBranches>\r\n    </option>\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"bottom_up_parser\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"lexer\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"node_classes\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"parsing_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.lexer\" />\r\n        <item itemvalue=\"Python.bottom_up_parser\" />\r\n        <item itemvalue=\"Python.parsing_table\" />\r\n        <item itemvalue=\"Python.node_classes\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>\r\n          <line>33</line>\r\n          <option name=\"timeStamp\" value=\"15\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision 84eec22b6ade1cbe810526e4978e1403b6e312a4)
+-+++ b/.idea/workspace.xml	(date 1616169981491)
+-@@ -5,10 +5,7 @@
+-   </component>
+-   <component name="ChangeListManager">
+-     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
+--      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/backend/comviz_api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/comviz_api/views.py" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM__Default_Changelist_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM__Default_Changelist_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM__Default_Changelist_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM__Default_Changelist_.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]" date="1616131554988" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 3/19/2021 10:55 AM [Default Changelist]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM__Default_Changelist_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM__Default_Changelist_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM__Default_Changelist_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM__Default_Changelist_.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ /dev/null	(revision 38c7620d4162124a1986932484a7630116e0c061)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]" date="1616170133854" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 3/19/2021 9:38 PM [Default Changelist]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/client/src/App.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/client/src/App.js\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/client/src/components/graph.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/client/src/components/graph.js\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/client/src/components/intro.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/client/src/components/intro.js\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/client/src/components/visualizer.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/client/src/components/visualizer.js\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/run.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/run.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_ast.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_ast.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/compiler/shell.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/compiler/shell.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/requirements.txt\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/requirements.txt\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_BRANCH_BY_REPOSITORY\">\r\n      <map>\r\n        <entry key=\"$PROJECT_DIR$\" value=\"ashu_comviz\" />\r\n      </map>\r\n    </option>\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitSEFilterConfiguration\">\r\n    <file-type-list>\r\n      <filtered-out-file-type name=\"LOCAL_BRANCH\" />\r\n      <filtered-out-file-type name=\"REMOTE_BRANCH\" />\r\n      <filtered-out-file-type name=\"TAG\" />\r\n      <filtered-out-file-type name=\"COMMIT_BY_MESSAGE\" />\r\n    </file-type-list>\r\n  </component>\r\n  <component name=\"GitToolBoxStore\">\r\n    <option name=\"projectConfigVersion\" value=\"2\" />\r\n    <option name=\"recentBranches\">\r\n      <RecentBranches>\r\n        <option name=\"branchesForRepo\">\r\n          <list>\r\n            <RecentBranchesForRepo>\r\n              <option name=\"branches\">\r\n                <list>\r\n                  <RecentBranch>\r\n                    <option name=\"branchName\" value=\"main\" />\r\n                    <option name=\"lastUsedInstant\" value=\"1616759342\" />\r\n                  </RecentBranch>\r\n                  <RecentBranch>\r\n                    <option name=\"branchName\" value=\"ashu_comviz\" />\r\n                    <option name=\"lastUsedInstant\" value=\"1616170134\" />\r\n                  </RecentBranch>\r\n                </list>\r\n              </option>\r\n              <option name=\"repositoryRootUrl\" value=\"file://$PROJECT_DIR$\" />\r\n            </RecentBranchesForRepo>\r\n          </list>\r\n        </option>\r\n      </RecentBranches>\r\n    </option>\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1oZUZieMlYOsZjABWEfRkataDhm\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$/compiler/Compiler\" />\r\n  </component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"D:\\GeeK\\ComViZ_2.0\\compiler\\Compiler\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.shell\">\r\n    <configuration name=\"bottom_up_parser\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"jsonPython\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/jsonPython.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"lexer\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/lexical_analyzer/lexer.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"node_classes\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/node_classes.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"parsing_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/parsing_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"shell\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ComViZ_2.0\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/compiler\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/compiler/shell.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.lexer\" />\r\n        <item itemvalue=\"Python.bottom_up_parser\" />\r\n        <item itemvalue=\"Python.parsing_table\" />\r\n        <item itemvalue=\"Python.node_classes\" />\r\n        <item itemvalue=\"Python.jsonPython\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1613493663821</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1613493663821</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/lexical_analyzer/lexer.py</url>\r\n          <line>122</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/compiler/Compiler/semantic_analyzer/evaluate_ast.py</url>\r\n          <line>33</line>\r\n          <option name=\"timeStamp\" value=\"15\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ b/.idea/workspace.xml	(date 1617164200940)
+@@ -5,18 +5,21 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM__Default_Changelist_.xml" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM__Default_Changelist_.xml" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM__Default_Changelist_.xml" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM__Default_Changelist_.xml" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM__Default_Changelist_.xml" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM__Default_Changelist_.xml" beforeDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/client/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/App.js" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/client/src/components/graph.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/graph.js" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/client/src/components/intro.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/intro.js" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/client/src/components/visualizer.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/visualizer.js" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/run.py" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/top_down_parser.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_ast.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_ast.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+Index: compiler/shell.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import json\r\n\r\nfrom Compiler.run import run, global_symbol_table\r\nfrom Compiler.syntax_analyzer.bottom_up_parser import BUParser\r\nfrom Compiler.syntax_analyzer.parsing_table import ParsingTable\r\nfrom Compiler.syntax_analyzer.top_down_parser import Parser\r\nfrom Visualizer.visualize_ast import VisualizeAST\r\nfrom Visualizer.visualize_pt import VisualizeParseTree\r\n\r\nresponse = {\r\n    \"tokens\": None,\r\n    \"lexer_errors\": None,\r\n    \"top_down_digraphs\": None,\r\n    \"top_down_syntax_errors\": None,\r\n    \"top_down_evaluation_result\": None,\r\n    \"top_down_runtime_error\": None,\r\n    \"symbol_table\": None,\r\n    \"bottom_up_digraphs\": None,\r\n    \"bottom_up_syntax_errors\": None,\r\n    \"bottom_up_evaluation_result\": None,\r\n    \"bottom_up_runtime_error\": None\r\n}\r\n\r\nresult = {\r\n    \"status\": \"\",\r\n    \"data\": None\r\n}\r\n\r\n\r\ndef clear():\r\n    response[\"tokens\"] = None\r\n    response[\"lexer_errors\"] = None\r\n    response[\"top_down_digraphs\"] = None\r\n    response[\"top_down_syntax_errors\"] = None\r\n    response[\"top_down_evaluation_result\"] = None\r\n    response[\"top_down_runtime_error\"] = None\r\n    response[\"symbol_table\"] = None\r\n    response[\"bottom_up_digraphs\"] = None\r\n    response[\"bottom_up_syntax_errors\"] = None\r\n    response[\"bottom_up_evaluation_result\"] = None\r\n    response[\"bottom_up_runtime_error\"] = None\r\n    print('Cleared response')\r\n\r\n\r\ndef comviz(source_code):\r\n    vpt = VisualizeParseTree()\r\n    vast = VisualizeAST()\r\n    tdparser = Parser()\r\n    tdparser.vast = vast\r\n    tdparser.vpt = vpt\r\n    lexer_result, lexer_errors, ast_root, syntax_errors, eval_result, runtime_errors = run(file_name='<stdin>',\r\n                                                                                           text=source_code,\r\n                                                                                           parser=tdparser)\r\n\r\n    buparser = BUParser(lexer_result, ParsingTable(), global_symbol_table, vpt, vast)\r\n    if lexer_errors:\r\n        print(lexer_errors.as_string())\r\n        response[\"lexer_errors\"] = lexer_errors.as_string()\r\n\r\n        result['status'] = 'error'\r\n        result['data'] = response\r\n    else:\r\n        # No lexical errors\r\n        print(lexer_result)\r\n        tokens = []\r\n        for token in lexer_result:\r\n            tokens.append(token.__repr__())\r\n        response[\"tokens\"] = tokens\r\n        response[\"top_down_digraphs\"] = tdparser.vpt.pt_digraphs\r\n        print(\"Bottom Up Parser\")\r\n        buparser.bottom_up_parse()\r\n        buparser.digraphs = buparser.vpt.bupt_digraphs\r\n        print('Bottom Up Runtime Result :', buparser.runtime_result)\r\n        response[\"bottom_up_digraphs\"] = buparser.digraphs\r\n        response[\"bottom_up_syntax_errors\"] = buparser.syntax_error\r\n        response[\"bottom_up_evaluation_result\"] = buparser.runtime_result\r\n        response[\"bottom_up_runtime_error\"] = buparser.runtime_error\r\n\r\n        if syntax_errors:\r\n            print(syntax_errors.as_string())\r\n            response[\"top_down_syntax_errors\"] = syntax_errors.as_string()\r\n\r\n            result['status'] = 'error'\r\n            result['data'] = response\r\n\r\n        else:\r\n            # No syntax errors\r\n            print(ast_root)\r\n            if runtime_errors:\r\n                print(runtime_errors.as_string())\r\n                response[\"top_down_runtime_error\"] = runtime_errors.as_string()\r\n\r\n                result['status'] = 'error'\r\n                result['data'] = response\r\n            else:\r\n                # No runtime errors\r\n                response[\"top_down_runtime_error\"] = None\r\n                response[\"bottom_runtime_error\"] = None\r\n                response[\"top_down_evaluation_result\"] = eval_result.number_value\r\n                response[\"symbol_table\"] = global_symbol_table.__repr__()\r\n                # print(json.dumps(response, indent=4))\r\n\r\n                print('Top Down Runtime Result :', eval_result)\r\n\r\n                result['status'] = 'success'\r\n                result['data'] = response\r\n\r\n    return result\r\n\r\n\r\n# comviz(\"TRUE\")\r\n# comviz(\"a\")\r\n# comviz(\"(2^3)^2\")\r\n# comviz(\"1+2\")\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/compiler/shell.py b/compiler/shell.py
+--- a/compiler/shell.py	(revision 38c7620d4162124a1986932484a7630116e0c061)
++++ b/compiler/shell.py	(date 1616778773886)
+@@ -53,6 +53,7 @@
+                                                                                            parser=tdparser)
+ 
+     buparser = BUParser(lexer_result, ParsingTable(), global_symbol_table, vpt, vast)
++    response["symbol_table"] = global_symbol_table.__repr__()
+     if lexer_errors:
+         print(lexer_errors.as_string())
+         response["lexer_errors"] = lexer_errors.as_string()
