@@ -79,14 +79,16 @@ function Graph(props) {
   const [dotArrayIndex, setDotArrayIndex] = useState(0);
   const d3 = window.d3;
   useEffect(() => {
-    console.log('csknkn');
-    console.log(parserType);
-    console.log(props.parserType);
     if (parserType != props.parserType) {
       setDotArrayIndex(0);
       setDotIndex(0);
     }
   }, [props.parserType]);
+
+  useEffect(() => {
+      setDotArrayIndex(0);
+      setDotIndex(0);
+  }, [dots]);
   useEffect(() => {
     function attributer(datum, index, nodes) {
       var selection = d3.select(this);

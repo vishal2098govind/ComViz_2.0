@@ -106,7 +106,6 @@ const callBackend=async()=>{
     setInput(e.target.value);
   };
   const errorClose=()=>{
-    console.log('sjb')
     setCodeStatus('RUN CODE')
   }
   const First = () => {

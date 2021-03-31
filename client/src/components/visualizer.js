@@ -16,7 +16,8 @@ import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import Axios from 'axios';
 import {useSelector,useDispatch} from 'react-redux';
-import {addCompilerData} from '../redux/ruleAction'
+import {addCompilerData} from '../redux/ruleAction';
+import ErrorBar from './errorBar'
 const useStyles = makeStyles((theme) => ({
     root: {
         display: 'flex',
@@ -87,6 +88,7 @@ const [vizStatus,setVizStatus]=useState(false);
 const [codeStatus,setCodeStatus]=useState('RUN CODE');
 const [loading,setLoading]=useState(false)
 const [clearST,setClearST]=useState(true);
+const [errorMessage,setErrorMessage]=useState('')
 const callBackend=async()=>{
   setLoading(true)
   const form = new FormData();
@@ -98,11 +100,18 @@ const callBackend=async()=>{
       url: 'http://localhost:8000/submit_code',
       data: form,
     });
-    console.log(response.data.data)
-    dispatch(addCompilerData(response.data.data))
-    setLoading(false)
-    setVizStatus(true)
-    setCodeStatus('SUCCESS')
+    if(response.data.status=='error'){
+      setErrorMessage(response.data.data.lexer_errors)
+      setVizStatus(false)
+      setCodeStatus('FAILED')
+      setLoading(false)
+      }else{
+        response.data.data['compilerInput']=compilerInput
+      dispatch(addCompilerData(response.data.data))
+      setLoading(false)
+      setVizStatus(true)
+      setCodeStatus('SUCCESS')
+      }
   }catch{
     setVizStatus(false)
     setCodeStatus('FAILED')
@@ -114,7 +123,10 @@ const inputChange=(e)=>{
 }
 const openDialog=()=>{
   setDialog(true)
-  console.log('csknkn')
+
+}
+const errorClose=()=>{
+  setCodeStatus('RUN CODE')
 }
     const phaseRender=()=>{
       switch(step){
@@ -338,6 +350,7 @@ const openDialog=()=>{
         NEXT PHASE
       </Button>
     </div>
+    { errorMessage ? <ErrorBar text={errorMessage} errorClose={errorClose}/> : ''}
     </div>
   );
 }
