@@ -296,7 +296,7 @@ const syntaxStep=()=>{
          inverted={true}
          /> 
               </Dialog>
-                <div style={{position:'fixed',right:'0',top:'8%'}}>
+                <div style={{position:'fixed',right:'0',top:'12%'}}>
             <TextField style={{backgroundColor:'#DEF2F1',borderRadius:'7px',marginTop:'10px'}} value={compilerInput} disabled={true} onClick={()=>{props.openDialog()}}/>     
             <Button variant="contained"
             color="default"
@@ -345,7 +345,7 @@ const title=[{
             <spam style={{color:'#FEFFFF'}}>{title[step].first}</spam> {title[step].second}
     </Typography>
         {syntaxStep()}
-    <div>
+    <div style={{position:'fixed',left:'32%',bottom:'0%'}}>
     <Button
         variant="contained"
         color="default"

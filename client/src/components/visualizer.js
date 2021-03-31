@@ -310,16 +310,16 @@ const openDialog=()=>{
         </div>
     </div>
     </Dialog>
-    <Typography variant='h2' className={classes.headText} style={{position:'fixed',bottom:'650px'}}>
+    <Typography variant='h2' className={classes.headText} style={{position:'fixed',top:'0%',margin:'0px'}}>
             <spam style={{color:'#FEFFFF'}}> {step==0? 'LEXICAL': 'SYNTAX'} </spam> ANALYSIS
     </Typography>
     {phaseRender()}
-    <div style={{position:'fixed'}}>
+    <div >
     <Button
         variant="contained"
         color="default"
         className={classes.button1}
-        style={{marginTop:'10px',height:'40px',width:'190px',top:'335px',right:'571px'}} 
+        style={{position:'fixed',left:'0%',bottom:'0%'}} 
         startIcon={<SkipPreviousIcon />}
         disabled={step==0}
         onClick={()=>{setStep(step-1)}}
@@ -330,7 +330,7 @@ const openDialog=()=>{
         variant="contained"
         color="default"
         className={classes.button1}
-        style={{marginTop:'10px',height:'40px',width:'150px',left:'570px',top:'335px'}}
+        style={{position:'fixed',right:'0%',bottom:'0%'}}
         endIcon={<SkipNextIcon />}
         disabled={step==1}
         onClick={()=>{setStep(step+1)}}
