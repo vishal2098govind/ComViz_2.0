@@ -5,25 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7bde1c6c-5fd9-4a84-b02a-b44dbb7b1ac3" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_03_PM__Default_Changelist_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_17_2021_10_36_PM__Default_Changelist_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_10_55_AM__Default_Changelist_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_03_AM__Default_Changelist_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_11_11_AM__Default_Changelist_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM_[Default_Changelist]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_19_2021_9_38_PM__Default_Changelist_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_26_2021_5_18_PM__Default_Changelist_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_3_26_2021_5_18_PM__Default_Changelist_.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/comviz_api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/comviz_api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/components/intro.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/intro.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/components/graph.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/graph.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/components/phases/syntax.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/phases/syntax.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/components/visualizer.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/components/visualizer.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Compiler/syntax_analyzer/bottom_up_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/shell.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/shell.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/Visualizer/visualize_pt.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

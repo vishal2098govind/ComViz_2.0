@@ -1,6 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import ReactLoading from 'react-loading';
-import {AppBar,Toolbar,IconButton,Typography,InputBase,TextField,Checkbox,Button,Dialog,Drawer,List,ListItem,ListItemIcon,ListItemText,Divider,CircularProgress} from '@material-ui/core'
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  InputBase,
+  TextField,
+  Checkbox,
+  Button,
+  Dialog,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  CircularProgress,
+} from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import SkipNextIcon from '@material-ui/icons/SkipNext';
 import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
@@ -15,128 +32,130 @@ import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import Axios from 'axios';
-import {useSelector,useDispatch} from 'react-redux';
-import {addCompilerData} from '../redux/ruleAction';
-import ErrorBar from './errorBar'
-const useStyles = makeStyles((theme) => ({
-    root: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        textAlign:'center',
-        textJustify:'center',
-        minHeight: typeof window !== 'undefined' ? window.innerHeight : '-webkit-fill-available',
-        background: '#27363b',
-        fontFamily:"'Yanone Kaffeesatz', sans-serif",
-    },
-    headText:{
-        fontFamily:"'Raleway', sans-serif",
-        color: '#75b2ad',
-        marginTop:'15px'
-    },
-    textWhite:{
-        fontFamily:"'Raleway', sans-serif",
-        color: '#FEFFFF',
-        marginTop:'15px'
-    },
-    simpleText:{
-        fontFamily:"'Yanone Kaffeesatz', sans-serif",
-        color: '#17252A'
-    },
-    button:{
-        backgroundColor: '#17252A',
-        border: 'none',
-        borderRadius:'10px',
-        color: '#FEFFFF',
-        padding: '15px 32px',
-        textAlign: 'center',
-        textDecoration: 'none',
-        display : 'inline-block',
-        fontSize: '16px',
-        fontFamily:"'Raleway', sans-serif",
-        margin:'10px'
-    },
-    button1:{
-        margin: theme.spacing(1),
-        backgroundColor: '#75b2ad',
-        fontFamily:"'Raleway', sans-serif",
-        color: '#FEFFFF',
-    },
-    list: {
-      width: 250,
-    },
-    fullList: {
-      width: 'auto',
-    },headText1:{
-      fontFamily:"'Raleway', sans-serif",
-      color: '#17252A',
-      marginTop:'15px',
-      fontSize:'15px'
+import { useSelector, useDispatch } from 'react-redux';
+import { addCompilerData } from '../redux/ruleAction';
+import ErrorBar from './errorBar';
+const useStyles = makeStyles(theme => ({
+  root: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlign: 'center',
+    textJustify: 'center',
+    minHeight:
+      typeof window !== 'undefined'
+        ? window.innerHeight
+        : '-webkit-fill-available',
+    background: '#27363b',
+    fontFamily: "'Yanone Kaffeesatz', sans-serif",
   },
-    }
-    ))
+  headText: {
+    fontFamily: "'Raleway', sans-serif",
+    color: '#75b2ad',
+    marginTop: '15px',
+  },
+  textWhite: {
+    fontFamily: "'Raleway', sans-serif",
+    color: '#FEFFFF',
+    marginTop: '15px',
+  },
+  simpleText: {
+    fontFamily: "'Yanone Kaffeesatz', sans-serif",
+    color: '#17252A',
+  },
+  button: {
+    backgroundColor: '#17252A',
+    border: 'none',
+    borderRadius: '10px',
+    color: '#FEFFFF',
+    padding: '15px 32px',
+    textAlign: 'center',
+    textDecoration: 'none',
+    display: 'inline-block',
+    fontSize: '16px',
+    fontFamily: "'Raleway', sans-serif",
+    margin: '10px',
+  },
+  button1: {
+    margin: theme.spacing(1),
+    backgroundColor: '#75b2ad',
+    fontFamily: "'Raleway', sans-serif",
+    color: '#FEFFFF',
+  },
+  list: {
+    width: 250,
+  },
+  fullList: {
+    width: 'auto',
+  },
+  headText1: {
+    fontFamily: "'Raleway', sans-serif",
+    color: '#17252A',
+    marginTop: '15px',
+    fontSize: '15px',
+  },
+}));
 function Vizualizer() {
-    
-    const classes = useStyles();
-    const [step,setStep]=useState(0)
-    const [drawer,setDrawer]=useState(false);
-    const [dialog,setDialog]=useState(false);
-    const dispatch=useDispatch();
-const [compilerInput,setInput]=useState('')
-const [vizStatus,setVizStatus]=useState(false);
-const [codeStatus,setCodeStatus]=useState('RUN CODE');
-const [loading,setLoading]=useState(false)
-const [clearST,setClearST]=useState(true);
-const [errorMessage,setErrorMessage]=useState('')
-const callBackend=async()=>{
-  setLoading(true)
-  const form = new FormData();
-  form.append('source_code',compilerInput);
-  form.append('clear_symbol_table',setClearST)
-  try{
-    const response = await Axios({
-      method: 'post',
-      url: 'http://localhost:8000/submit_code',
-      data: form,
-    });
-    if(response.data.status=='error'){
-      setErrorMessage(response.data.data.lexer_errors)
-      setVizStatus(false)
-      setCodeStatus('FAILED')
-      setLoading(false)
-      }else{
-        response.data.data['compilerInput']=compilerInput
-      dispatch(addCompilerData(response.data.data))
-      setLoading(false)
-      setVizStatus(true)
-      setCodeStatus('SUCCESS')
+  const classes = useStyles();
+  const [step, setStep] = useState(0);
+  const [drawer, setDrawer] = useState(false);
+  const [dialog, setDialog] = useState(false);
+  const dispatch = useDispatch();
+  const [compilerInput, setInput] = useState('');
+  const [vizStatus, setVizStatus] = useState(false);
+  const [codeStatus, setCodeStatus] = useState('RUN CODE');
+  const [loading, setLoading] = useState(false);
+  const [clearST, setClearST] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const callBackend = async () => {
+    setLoading(true);
+    const form = new FormData();
+    form.append('source_code', compilerInput);
+    form.append('clear_symbol_table', setClearST);
+    try {
+      const response = await Axios({
+        method: 'post',
+        url: 'http://localhost:8000/submit_code',
+        data: form,
+      });
+      if (response.data.status == 'error') {
+        setErrorMessage(response.data.data.lexer_errors);
+        setVizStatus(false);
+        setCodeStatus('FAILED');
+        setLoading(false);
+      } else {
+        response.data.data['compilerInput'] = compilerInput;
+        dispatch(addCompilerData(response.data.data));
+        setLoading(false);
+        setVizStatus(true);
+        setCodeStatus('SUCCESS');
       }
-  }catch{
-    setVizStatus(false)
-    setCodeStatus('FAILED')
-    setLoading(false)
-  }
-}
-const inputChange=(e)=>{
-  setInput(e.target.value)
-}
-const openDialog=()=>{
-  setDialog(true)
-
-}
-const errorClose=()=>{
-  setCodeStatus('RUN CODE')
-}
-    const phaseRender=()=>{
-      switch(step){
-        case 0: 
-          return <Lexical/>
-        case 1: 
-          return <Syntax openDialog={openDialog}/>
-        default: <Lexical/>
-      }
-    };
+    } catch {
+      setVizStatus(false);
+      setCodeStatus('FAILED');
+      setLoading(false);
+    }
+  };
+  const inputChange = e => {
+    setInput(e.target.value);
+  };
+  const openDialog = () => {
+    setDialog(true);
+  };
+  const errorClose = () => {
+    setCodeStatus('RUN CODE');
+  };
+  const phaseRender = () => {
+    switch (step) {
+      case 0:
+        return <Lexical />;
+      case 1:
+        return <Syntax openDialog={openDialog} />;
+      default:
+        <Lexical />;
+    }
+  };
   return (
     <div className={classes.root}>
       <IconButton
@@ -311,46 +330,70 @@ const errorClose=()=>{
                 setVizStatus(false);
                 setCodeStatus('RUN CODE');
               }}
-        disabled={!vizStatus}
-        
-      >
-        VISUALIZE
-      </Button>
-    </div>
-    <div style={{marginRight:'0px'}}>
-        <Checkbox checked={clearST} onChange={(e)=>setClearST(e.target.checked)}name="checkedA" defaultChecked style={{color:'#17252A'}}/><Typography variant='h8' className={classes.headText1}>Clear Symbol Table</Typography>
+              disabled={!vizStatus}
+            >
+              VISUALIZE
+            </Button>
+          </div>
+          <div style={{ marginRight: '0px' }}>
+            <Checkbox
+              checked={clearST}
+              onChange={e => setClearST(e.target.checked)}
+              name='checkedA'
+              defaultChecked
+              style={{ color: '#17252A' }}
+            />
+            <Typography variant='h8' className={classes.headText1}>
+              Clear Symbol Table
+            </Typography>
+          </div>
         </div>
-    </div>
-    </Dialog>
-    <Typography variant='h2' className={classes.headText} style={{position:'fixed',top:'0%',margin:'0px'}}>
-            <spam style={{color:'#FEFFFF'}}> {step==0? 'LEXICAL': 'SYNTAX'} </spam> ANALYSIS
-    </Typography>
-    {phaseRender()}
-    <div >
-    <Button
-        variant="contained"
-        color="default"
-        className={classes.button1}
-        style={{position:'fixed',left:'0%',bottom:'0%'}} 
-        startIcon={<SkipPreviousIcon />}
-        disabled={step==0}
-        onClick={()=>{setStep(step-1)}}
+      </Dialog>
+      <Typography
+        variant='h2'
+        className={classes.headText}
+        style={{ position: 'fixed', top: '0%', margin: '0px' }}
       >
-        PREVIOUS PHASE
-    </Button>
-    <Button
-        variant="contained"
-        color="default"
-        className={classes.button1}
-        style={{position:'fixed',right:'0%',bottom:'0%'}}
-        endIcon={<SkipNextIcon />}
-        disabled={step==1}
-        onClick={()=>{setStep(step+1)}}
-      >
-        NEXT PHASE
-      </Button>
-    </div>
-    { errorMessage ? <ErrorBar text={errorMessage} errorClose={errorClose}/> : ''}
+        <spam style={{ color: '#FEFFFF' }}>
+          {' '}
+          {step == 0 ? 'LEXICAL' : 'SYNTAX'}{' '}
+        </spam>{' '}
+        ANALYSIS
+      </Typography>
+      {phaseRender()}
+      <div>
+        <Button
+          variant='contained'
+          color='default'
+          className={classes.button1}
+          style={{ position: 'fixed', left: '0%', bottom: '0%' }}
+          startIcon={<SkipPreviousIcon />}
+          disabled={step == 0}
+          onClick={() => {
+            setStep(step - 1);
+          }}
+        >
+          PREVIOUS PHASE
+        </Button>
+        <Button
+          variant='contained'
+          color='default'
+          className={classes.button1}
+          style={{ position: 'fixed', right: '0%', bottom: '0%' }}
+          endIcon={<SkipNextIcon />}
+          disabled={step == 1}
+          onClick={() => {
+            setStep(step + 1);
+          }}
+        >
+          NEXT PHASE
+        </Button>
+      </div>
+      {errorMessage ? (
+        <ErrorBar text={errorMessage} errorClose={errorClose} />
+      ) : (
+        ''
+      )}
     </div>
   );
 }

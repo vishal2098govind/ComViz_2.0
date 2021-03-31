@@ -33,7 +33,7 @@ class VisualizeParseTree:
                 }
             })
 
-    def visualize_bup_parse_tree(self, stack, bup_ast_digraphs):
+    def visualize_bup_parse_tree(self, stack, bup_ast_digraphs, look_ahead):
         if stack:
             dgi = 'digraph tree {' \
                   'graph [rankdir=TB]' \
@@ -47,4 +47,9 @@ class VisualizeParseTree:
                             else:
                                 dgi += line.strip()
             dgi += ''.join(bup_ast_digraphs) + '}'
-            self.bupt_digraphs.append([dgi])
+            self.bupt_digraphs.append({
+                'digraph': [dgi],
+                'index': {
+                    'look_ahead': look_ahead
+                }
+            })

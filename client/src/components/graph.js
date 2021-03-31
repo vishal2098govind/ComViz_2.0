@@ -86,8 +86,8 @@ function Graph(props) {
   }, [props.parserType]);
 
   useEffect(() => {
-      setDotArrayIndex(0);
-      setDotIndex(0);
+    setDotArrayIndex(0);
+    setDotIndex(0);
   }, [dots]);
   useEffect(() => {
     function attributer(datum, index, nodes) {
@@ -162,13 +162,19 @@ function Graph(props) {
         let dotLines =
           props.parserType == 'topDown'
             ? dots[dotArrayIndex].digraph
-            : dots[dotArrayIndex];
-        console.log(dots[dotArrayIndex]);
-        if (props.parserType == 'topDown')
+            : dots[dotArrayIndex].digraph;
+        if (props.parserType == 'topDown') {
+          console.log(dots[dotArrayIndex].look_ahead);
           props.productionColor(
             dots[dotArrayIndex].index.col,
             dots[dotArrayIndex].index.row,
-            dots[dotArrayIndex].index.look_ahead,
+            dots[dotArrayIndex].index.look_ahead
+          );
+        } else
+          props.productionColor(
+            null,
+            null,
+            dots[dotArrayIndex].index.look_ahead
           );
 
         //   if(dotArrayIndex==1){
