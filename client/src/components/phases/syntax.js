@@ -236,7 +236,7 @@ symbolTableData.push(object)
 const productionColor=(t,nt,i)=>{
   setTerminal(t)
   setNonTerminal(nt)
-  setTokenIndex(i+1)
+  setTokenIndex(i)
 }
 const syntaxStep=()=>{
     // if(step<0){
