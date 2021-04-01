@@ -52,7 +52,8 @@ def comviz(source_code):
                                                                                            text=source_code,
                                                                                            parser=tdparser)
 
-    buparser = BUParser(lexer_result, ParsingTable(), global_symbol_table, vpt, vast)
+    buparser = BUParser(lexer_result, ParsingTable(),
+                        global_symbol_table, vpt, vast)
     response["symbol_table"] = global_symbol_table.__repr__()
     if lexer_errors:
         print(lexer_errors.as_string())
@@ -112,4 +113,4 @@ def comviz(source_code):
 # comviz("TRUE")
 # comviz("a")
 # comviz("(2^3)^2")
-# comviz("1+2")
+# comviz("var age 10")

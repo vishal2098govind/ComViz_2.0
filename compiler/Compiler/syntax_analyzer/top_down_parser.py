@@ -70,14 +70,20 @@ class Parser:
         non_terminal_node = AnyNode(type="PT", id=uuid.uuid4(), name='E', parent=caller)
         self.trace.append(non_terminal_node)
 
-        self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, look_ahead = self.token_index)
+        self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row='E', col=self.current_token.value,
+                                      look_ahead = self.token_index)
         parse_result = self.expression(caller=non_terminal_node)
-        self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, look_ahead = self.token_index)
+        print(parse_result.error, "oaihgfosiahgoirhg")
+        self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row=parse_result.parser_node,
+                                      col=self.current_token.value,
+                                      look_ahead =
+        self.token_index)
 
         if not parse_result.error and self.current_token.type != TT_EOF:
             return parse_result.failure(InvalidSyntaxError(position_start=self.current_token.position_start,
                                                            position_end=self.current_token.position_end,
-                                                           error_details="Expected + or - or * or /"))
+                                                           error_details="Expected + or - or * or /"),
+                                        parser_node=parse_result.parser_node)
 
         return parse_result
 
@@ -98,7 +104,7 @@ class Parser:
             self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row = 'L', col = token.type, look_ahead = self.token_index)
 
             parse_result.register(self.advance_token())
-            return parse_result.success(node=NumberNode(number_token=token))
+            return parse_result.success(node=NumberNode(number_token=token), parser_node = 'L')
 
         # L -> ID
         if token.type == TT_IDENTIFIER:
@@ -112,7 +118,7 @@ class Parser:
             self.vast.visualize_ast(var_node)
             self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row= 'L', col='id', look_ahead = self.token_index)
 
-            return parse_result.success(node=VariableAccessNode(var_name_token=token))
+            return parse_result.success(node=VariableAccessNode(var_name_token=token), parser_node='L')
 
         # L -> ( E )
         elif token.type == TT_LPAREN:
@@ -135,19 +141,21 @@ class Parser:
 
             if self.current_token.type == TT_RPAREN:
                 parse_result.register(self.advance_token())
-                return parse_result.success(node=e_node)
+                return parse_result.success(node=e_node, parser_node='L')
             else:
                 # Syntax Error
                 return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                      position_end=token.position_end,
                                                                      error_details=f'Expected ), '
-                                                                                   f'found {self.current_token.type}'))
+                                                                                   f'found '
+                                                                                   f'{self.current_token.type}'),
+                                            parser_node='L')
 
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected int or float or id or (, '
-                                                                               f'found {token}'))
+                                                                               f'found {token}'), parser_node='L')
 
     # P -> L ^ P | L ( LL(2) )
     def power(self, caller):
@@ -195,7 +203,7 @@ class Parser:
                 self.vast.visualize_ast(root)
 
                 return parse_result.success(node=BinaryOperationNode(left_node=a_node, operator_token=power_token,
-                                                                     right_node=p_node))
+                                                                     right_node=p_node), parser_node='P')
 
             # P -> L
 
@@ -207,19 +215,20 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
-            return parse_result.success(node=a_node)
+            return parse_result.success(node=a_node, parser_node='P')
 
         else:
             if token.type in (TT_INT, TT_FLOAT, TT_LPAREN, TT_IDENTIFIER) and power_token.type != TT_POWER:
                 return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                      position_end=token.position_end,
                                                                      error_details=f'Expected ^ after {token}, '
-                                                                                   f'found {power_token}'))
+                                                                                   f'found {power_token}'),
+                                            parser_node='P')
             elif token.type not in (TT_INT, TT_FLOAT, TT_LPAREN, TT_IDENTIFIER):
                 return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                      position_end=token.position_end,
                                                                      error_details=f'Expected int or float or ( or id, '
-                                                                                   f'found {token}'))
+                                                                                   f'found {token}'), parser_node='P')
 
     # F -> + P | - P | P
     def factor(self, caller):
@@ -247,7 +256,8 @@ class Parser:
             self.ast_trace.append(root)
             self.vast.visualize_ast(root)
 
-            return parse_result.success(node=UnaryOperationNode(operator_token=operator_token, right_node=p_node))
+            return parse_result.success(node=UnaryOperationNode(operator_token=operator_token, right_node=p_node),
+                                        parser_node='F')
 
         # F -> P
         elif token.type in (TT_LPAREN, TT_INT, TT_FLOAT, TT_IDENTIFIER):
@@ -259,7 +269,7 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
-            return parse_result.success(node=p_node)
+            return parse_result.success(node=p_node, parser_node='F')
 
         else:
             # Syntax Error
@@ -267,7 +277,7 @@ class Parser:
                                                                  position_end=token.position_end,
                                                                  error_details='Expected token of type int or float '
                                                                                'or + or - or ( or id, '
-                                                                               f'found {token}'))
+                                                                               f'found {token}'), parser_node='F')
 
     # T1 -> * F T1 | / F T1 | e
     def term_1(self, left_child, caller):
@@ -311,7 +321,7 @@ class Parser:
                 return parse_result
 
             else:
-                return parse_result.success(node=t1_node)
+                return parse_result.success(node=t1_node, parse_node='T1')
 
         # T1 -> e
         elif operator_token.type in (TT_PLUS, TT_MINUS, TT_EOF, TT_RPAREN, TT_LT, TT_GT, TT_LTE, TT_GTE, TT_NE, TT_EE) \
@@ -320,7 +330,7 @@ class Parser:
             self.trace.append(terminal_e_node)
             self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row='T1', col=operator_token.type, look_ahead = self.token_index)
 
-            return parse_result.success(node=left_child)
+            return parse_result.success(node=left_child, parser_node='T1')
 
         else:
             # Syntax Error
@@ -328,7 +338,8 @@ class Parser:
                                                                  position_end=operator_token.position_end,
                                                                  error_details=f'Expected + or - or * or / or ) or '
                                                                                f'EOF, '
-                                                                               f'found {operator_token}'))
+                                                                               f'found {operator_token}'),
+                                        parser_node='T1')
 
     # T -> F T1
     def term(self, caller):
@@ -354,7 +365,7 @@ class Parser:
                 return parse_result
 
             else:
-                return parse_result.success(node=t1_node)
+                return parse_result.success(node=t1_node, parser_node='T1')
 
         else:
             # Syntax Error
@@ -362,7 +373,8 @@ class Parser:
                                                                  position_end=self.current_token.position_end,
                                                                  error_details=f'Expected int or float or + or - or '
                                                                                f'( or id '
-                                                                               f'found {self.current_token}'))
+                                                                               f'found {self.current_token}'),
+                                        parser_node='T1')
 
     # A1 -> + T A1 | - T A1 | e
     def arith_expression_1(self, left_child, caller):
@@ -409,7 +421,7 @@ class Parser:
                 return parse_result
 
             else:
-                return parse_result.success(node=e1_node)
+                return parse_result.success(node=e1_node, parser_node='A1')
 
         # A1 -> e
         elif operator_token.type in (TT_EOF, TT_RPAREN, TT_LT, TT_GT, TT_GTE, TT_LTE, TT_NE, TT_EE) or \
@@ -418,14 +430,15 @@ class Parser:
             self.trace.append(terminal_e_node)
 
             self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row='A1', col=operator_token.type, look_ahead = self.token_index)
-            return parse_result.success(node=left_child)
+            return parse_result.success(node=left_child, parser_node='A1')
 
         else:
             # Syntax Error
             return parse_result.failure(error=InvalidSyntaxError(position_start=operator_token.position_start,
                                                                  position_end=operator_token.position_end,
                                                                  error_details=f'Expected + or - or ) or EOF, '
-                                                                               f'found {operator_token}'))
+                                                                               f'found {operator_token}'),
+                                        parser_node='A1')
 
     # A -> T A1
     def arith_expression(self, caller):
@@ -449,13 +462,14 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
-            return parse_result.success(node=a1_node)
+            return parse_result.success(node=a1_node, parser_node='A')
 
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected int or float or + or - or ( '
-                                                                               f'or id, found {token}'))
+                                                                               f'or id, found {token}'),
+                                        parser_node='A')
 
     # C1 -> < A C1 | <= A C1 | > A C1 | >= A C1 | == A C1 | != A C1 | e
     def comparison_expression_1(self, left_child, caller):
@@ -494,7 +508,7 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
-            return parse_result.success(node=c1_node)
+            return parse_result.success(node=c1_node, parse_node='C1')
 
         # C1 -> e
         elif token.type in (TT_RPAREN, TT_EOF) or (token.type == TT_KEYWORD and token.value in ('and', 'or')):
@@ -502,14 +516,14 @@ class Parser:
             self.trace.append(terminal_e_node)
             self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row='C1', col=token.type, look_ahead = self.token_index)
 
-            return parse_result.success(node=left_child)
+            return parse_result.success(node=left_child, parser_node='C1')
 
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected < or <= or > or >= or == or '
                                                                                '!= or ) or EOF or and or "or", '
-                                                                               f'found {token}'))
+                                                                               f'found {token}'), parser_node='C1')
 
     # C -> NOT C | A C1
     def comparison_expression(self, caller):
@@ -536,7 +550,8 @@ class Parser:
             self.ast_trace.append(root)
             self.vast.visualize_ast(root)
 
-            return parse_result.success(node=UnaryOperationNode(operator_token=token, right_node=c_node))
+            return parse_result.success(node=UnaryOperationNode(operator_token=token, right_node=c_node),
+                                        parser_node='C')
 
         # C -> A C1
         elif token.type in (TT_INT, TT_FLOAT, TT_PLUS, TT_MINUS, TT_LPAREN, TT_IDENTIFIER):
@@ -556,13 +571,14 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
-            return parse_result.success(node=c1_node)
+            return parse_result.success(node=c1_node, parser_node='C')
 
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected not or int or float or + or '
-                                                                               f'- or ( or id, found {token}'))
+                                                                               f'- or ( or id, found {token}'),
+                                        parser_node='C')
 
     # E1 -> AND C E1 | OR C E1 | e
     def expression_1(self, left_child, caller):
@@ -603,7 +619,7 @@ class Parser:
             if parse_result.error:
                 return parse_result
 
-            return parse_result.success(node=e1_node)
+            return parse_result.success(node=e1_node, parser_node='E1')
 
         # E1 -> e
         elif token.type in (TT_RPAREN, TT_EOF):
@@ -611,13 +627,13 @@ class Parser:
             self.trace.append(terminal_e_node)
             self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row='E1', col=token.type, look_ahead = self.token_index)
 
-            return parse_result.success(node=left_child)
+            return parse_result.success(node=left_child, parser_node='E1')
 
         else:
             return parse_result.failure(error=InvalidSyntaxError(position_start=token.position_start,
                                                                  position_end=token.position_end,
                                                                  error_details='Expected and or "or" or ) or EOF, '
-                                                                               f'found {token}'))
+                                                                               f'found {token}'), parser_node='E1')
 
     # E -> C E1 | VAR ID EQ E
     def expression(self, caller):
@@ -644,7 +660,7 @@ class Parser:
                 return parse_result
 
             else:
-                return parse_result.success(node=e1_node)
+                return parse_result.success(node=e1_node, parser_node='E')
 
         # E -> VAR ID EQ E
         elif self.current_token.type == TT_KEYWORD and self.current_token.value == 'var':
@@ -687,17 +703,19 @@ class Parser:
                     self.vast.visualize_ast(root)
 
                     return parse_result.success(node=VariableAssignNode(variable_name_token=variable_name_token,
-                                                                        variable_value=e_node))
+                                                                        variable_value=e_node), parser_node='E')
                 else:
                     return parse_result.failure(error=InvalidSyntaxError(
                         position_start=self.current_token.position_start,
                         position_end=self.current_token.position_end, error_details=f'Expected = , '
-                                                                                    f'found {self.current_token}'))
+                                                                                    f'found {self.current_token}'),
+                        parser_node='E')
             else:
                 return parse_result.failure(error=InvalidSyntaxError(
                     position_start=self.current_token.position_start,
                     position_end=self.current_token.position_end, error_details=f'Expected identifier , '
-                                                                                f'found {self.current_token}'))
+                                                                                f'found {self.current_token}'),
+                    parser_node='E')
 
         else:
             # Syntax Error
@@ -705,4 +723,5 @@ class Parser:
                                                                  position_end=self.current_token.position_end,
                                                                  error_details=f'Expected int or float or + or - or '
                                                                                f'var or or id or ( or not'
-                                                                               f'found {self.current_token}'))
+                                                                               f'found {self.current_token}'),
+                                        parser_node='E')
