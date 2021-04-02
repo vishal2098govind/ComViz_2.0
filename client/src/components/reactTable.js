@@ -212,8 +212,8 @@ function ReactTable(props) {
       columns=bottomUpTableColumns
     }
     const Styles = styled.div`
-    padding: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.2rem' : '0.85rem'))};
-    font-size: ${data.length<5 ? '1.5rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.65rem' : '0.85rem'))};
+    padding: ${data.length<5 ? '1.3rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.2rem' : '0.85rem'))};
+    font-size: ${data.length<5 ? '1.3rem' : ((props.size && props.size=='large') ? '1.3rem': ((props.size && props.size=='small') ? '0.65rem' : '0.85rem'))};
     
     table {
       border-spacing: 0;
