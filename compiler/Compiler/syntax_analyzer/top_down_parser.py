@@ -75,7 +75,7 @@ class Parser:
         parse_result = self.expression(caller=non_terminal_node)
         print(parse_result.error, "oaihgfosiahgoirhg")
         self.vpt.visualize_parse_tree(self.trace, self.vast.ast_digraphs, row=parse_result.parser_node,
-                                      col=self.current_token.value,
+                                      col=self.current_token.type if type(self.current_token.value)==int else self.current_token.value,
                                       look_ahead =
         self.token_index)
 
