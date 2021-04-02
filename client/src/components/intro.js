@@ -222,7 +222,7 @@ const Second=()=>{
             <spam style={{color:'#FEFFFF'}}>4. Final</spam> Result
             </Typography>
         </div>
-        { errorMessage ? <ErrorBar text={errorMessage} severity={severity} errorClose={errorClose} open={open}/> : 'knkenkenkn'}
+        { errorMessage ? <ErrorBar text={errorMessage} severity={severity} errorClose={errorClose} open={open}/> : ''}
       </div>
     );
   };
