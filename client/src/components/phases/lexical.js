@@ -40,6 +40,7 @@ const [loading,setLoading]=useState(false)
 const tokenListData=useSelector(state=>state.tokens)
 const syData=useSelector(state=>state.symbolTable)
 const errorMessage=useSelector(state=>state.lexerError)
+const [open,setOpen]=useState(true)
 // let tokenListData=[{
 //   token:'< int: 1 >'
 // },{
@@ -113,7 +114,9 @@ syData.var.forEach((col,index)=>{
 })
 symbolTableData.push(object)
 
-
+let errorClose=()=>{
+  setOpen(false)
+}
 
 
   return (
@@ -165,7 +168,7 @@ symbolTableData.push(object)
          data={symbolTableData} columns={symbolTableColumns}
          inverted={true}
          /> 
-         { errorMessage ? <ErrorBar text={errorMessage} /> : ''}
+         { errorMessage ? <ErrorBar text={errorMessage} errorClose={errorClose} open={open}/> : ''}
     </div>
   );
 }

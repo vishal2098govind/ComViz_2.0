@@ -79,6 +79,7 @@ function Syntax(props) {
   const errorMessageTopDown = useSelector(state => state.topDownError);
   const errorMessageBottomUp = useSelector(state => state.bottomUpError);
   const [stDialog, setStDialog] = useState(false);
+  const [open,setOpen]=useState(true)
   // let tokenListData=['< int : 1 >','< KEYWORD : AND >','< int : 0 >','< EOF >']
   let tokenListColumns = [];
   tokenListColumns.push({
@@ -293,6 +294,11 @@ function Syntax(props) {
     setNonTerminal(nt);
     setTokenIndex(i);
   };
+
+  let errorClose=()=>{
+    setOpen(false)
+  }
+  
   const syntaxStep = () => {
     // if(step<0){
     //   setStep(0)
@@ -538,6 +544,8 @@ function Syntax(props) {
               ? errorMessageTopDown
               : errorMessageBottomUp
           } `}
+          errorClose={errorClose} 
+          open={open}
         />
       ) : (
         ''
