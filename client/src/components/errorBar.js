@@ -4,21 +4,16 @@ import {Snackbar,IconButton} from '@material-ui/core'
 import MuiAlert from '@material-ui/lab/Alert';
 import CloseIcon from '@material-ui/icons/Close';
 function ErrorBar(props) {
-    const [open,setOpen]=useState(true)
+  console.log(props.open)
   return (
     <div>
         <Snackbar
         anchorOrigin={{ vertical: 'bottom',horizontal: 'left' }}
-        open={open}
-        onClose={()=>{
-            if(props.errorClose){
-                props.errorClose()
-            }
-        }}
+        open={props.open}
         // key={vertical + horizontal}
       >
           {/* <Alert severity="error">This is an error message!</Alert> */}
-      <MuiAlert elevation={6} variant="filled" severity="error">
+      <MuiAlert elevation={6} variant="filled" severity={props.severity ? props.severity : 'error'}>
           <div style={{display:'inline-block'}}>
           {props.text}
       <IconButton
@@ -27,7 +22,6 @@ function ErrorBar(props) {
               style={{marginLeft:'5px',padding:'0px'}}
             //   className={classes.close}
               onClick={()=>{
-                  setOpen(false)
                   if(props.errorClose){
                     props.errorClose()
                 }

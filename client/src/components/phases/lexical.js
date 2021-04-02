@@ -61,12 +61,15 @@ tokenListColumns.push({
   Header: 'Token List',
   accessor: 'tokenList'
 })
-tokenListData.forEach((col)=>{
-  tokenListColumns.push({
-    Header: col,
-    accessor: col
+if(tokenListData){
+  let td=new Set(tokenListData)
+  td.forEach((col)=>{
+    tokenListColumns.push({
+      Header: col,
+      accessor: col
+    })
   })
-})
+}
 
 // let symbolTableData=[{
 //   var:'NULL',
@@ -98,6 +101,7 @@ symbolTableColumns.push({
 let symbolTableData=[]
 let object={}
 object['var']='Variable Value'
+console.log(syData)
 syData.var.forEach((col,index)=>{
   symbolTableColumns.push({
     Header: col,

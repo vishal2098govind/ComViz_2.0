@@ -68,12 +68,14 @@ const [vizStatus,setVizStatus]=useState(false);
 const [codeStatus,setCodeStatus]=useState('RUN CODE');
 const [loading,setLoading]=useState(false);
 const [clearST,setClearST]=useState(true);
-const [errorMessage,setErrorMessage]=useState('')
+const [errorMessage,setErrorMessage]=useState('');
+const [severity,setSeverity]=useState('error');
+const [open,setOpen]=useState(true)
 const callBackend=async()=>{
   setLoading(true)
   const form = new FormData();
   form.append('source_code',compilerInput);
-  form.append('clear_symbol_table',setClearST)
+  form.append('clear_symbol_table',clearST)
   try{
     let response = await Axios({
       method: 'post',
@@ -81,12 +83,16 @@ const callBackend=async()=>{
       data: form,
     });
     if(response.data.status=='error'){
-    setErrorMessage(response.data.data.lexer_errors)
-    setVizStatus(false)
+      response.data.data['compilerInput']=compilerInput
+    dispatch(addCompilerData(response.data.data))
+    setOpen(true)
+    setErrorMessage(response.data.data.lexer_errors ? response.data.data.lexer_errors : response.data.data.top_down_syntax_errors ? response.data.data.top_down_syntax_errors : response.data.data.top_down_runtime_error )
+    setSeverity(response.data.data.lexer_errors ? 'error':'warning')
+    setVizStatus(true)
     setCodeStatus('FAILED')
     setLoading(false)
     }else{
-      response.data.data['compilerInput']=compilerInput
+    response.data.data['compilerInput']=compilerInput
     dispatch(addCompilerData(response.data.data))
     setLoading(false)
     setVizStatus(true)
@@ -96,7 +102,9 @@ const callBackend=async()=>{
   }catch(e){
     console.log(e)
     // setErrorMessage()
-    setVizStatus(false)
+    setOpen(true)
+    console.log('catch')
+    setVizStatus(true)
     setCodeStatus('FAILED')
     setLoading(false)
   }
@@ -106,7 +114,8 @@ const callBackend=async()=>{
     setInput(e.target.value);
   };
   const errorClose=()=>{
-    setCodeStatus('RUN CODE')
+    setCodeStatus('RUN CODE');
+    setOpen(false)
   }
   const First = () => {
     return (
@@ -151,6 +160,11 @@ const Second=()=>{
           variant='outlined'
           value={compilerInput}
           onChange={inputChange}
+          onClick={()=>{
+            if(codeStatus!='RUN CODE'){
+              setCodeStatus('RUN CODE')
+            }
+          }}
         />
         
         <div >
@@ -208,7 +222,7 @@ const Second=()=>{
             <spam style={{color:'#FEFFFF'}}>4. Final</spam> Result
             </Typography>
         </div>
-        { errorMessage ? <ErrorBar text={errorMessage} errorClose={errorClose}/> : ''}
+        { errorMessage ? <ErrorBar text={errorMessage} severity={severity} errorClose={errorClose} open={open}/> : 'knkenkenkn'}
       </div>
     );
   };

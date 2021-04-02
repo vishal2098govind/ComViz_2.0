@@ -25,8 +25,7 @@ function Table({ columns, data, props }) {
             {headerGroup.headers.map(column => {
               if(props.type=='tokenList' && props.tokenListData && column.Header==props.tokenListData[props.tokenIndex]){
                 console.log('here')
-                console.log(props.tokenListData[props.tokenIndex])
-                console.log(props.tokenIndex)
+                console.log(column)
                 return <th style={{background:'#80a879'}} {...column.getHeaderProps()}>{column.render('Header')}</th>
               }else{
                 return <th {...column.getHeaderProps()}>{column.render('Header')}</th>

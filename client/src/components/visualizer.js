@@ -108,11 +108,14 @@ function Vizualizer() {
   const [loading, setLoading] = useState(false);
   const [clearST, setClearST] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const lexError=useSelector(state=>state.lexerError);
+  const [severity,setSeverity]=useState('error');
+  const [open,setOpen]=useState(true)
   const callBackend = async () => {
     setLoading(true);
     const form = new FormData();
     form.append('source_code', compilerInput);
-    form.append('clear_symbol_table', setClearST);
+    form.append('clear_symbol_table', clearST);
     try {
       const response = await Axios({
         method: 'post',
@@ -120,8 +123,12 @@ function Vizualizer() {
         data: form,
       });
       if (response.data.status == 'error') {
-        setErrorMessage(response.data.data.lexer_errors);
-        setVizStatus(false);
+        response.data.data['compilerInput']=compilerInput
+        dispatch(addCompilerData(response.data.data))
+        setOpen(true)
+        setErrorMessage(response.data.data.lexer_errors ? response.data.data.lexer_errors : response.data.data.top_down_syntax_errors ? response.data.data.top_down_syntax_errors : response.data.data.top_down_runtime_error )
+        setSeverity(response.data.data.lexer_errors ? 'error':'warning')
+        setVizStatus(true);
         setCodeStatus('FAILED');
         setLoading(false);
       } else {
@@ -132,7 +139,8 @@ function Vizualizer() {
         setCodeStatus('SUCCESS');
       }
     } catch {
-      setVizStatus(false);
+      setVizStatus(true);
+      setOpen(false)
       setCodeStatus('FAILED');
       setLoading(false);
     }
@@ -145,6 +153,7 @@ function Vizualizer() {
   };
   const errorClose = () => {
     setCodeStatus('RUN CODE');
+    setOpen(false)
   };
   const phaseRender = () => {
     switch (step) {
@@ -381,7 +390,7 @@ function Vizualizer() {
           className={classes.button1}
           style={{ position: 'fixed', right: '0%', bottom: '0%' }}
           endIcon={<SkipNextIcon />}
-          disabled={step == 1}
+          disabled={step == 1 || lexError}
           onClick={() => {
             setStep(step + 1);
           }}
@@ -390,7 +399,7 @@ function Vizualizer() {
         </Button>
       </div>
       {errorMessage ? (
-        <ErrorBar text={errorMessage} errorClose={errorClose} />
+        <ErrorBar text={errorMessage} severity={severity} errorClose={errorClose} open={open}/>
       ) : (
         ''
       )}

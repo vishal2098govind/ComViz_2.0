@@ -85,7 +85,8 @@ function Syntax(props) {
     Header: 'Token List',
     accessor: 'tokenList',
   });
-  tokenListData.forEach(col => {
+  let td=new Set(tokenListData)
+  td.forEach(col => {
     tokenListColumns.push({
       Header: col,
       accessor: col,
