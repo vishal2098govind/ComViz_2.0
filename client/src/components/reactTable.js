@@ -3,9 +3,9 @@ import styled from 'styled-components'
 import { useTable } from 'react-table'
 import { Backdrop } from '@material-ui/core'
 import {bottomUpTableColumns,bottomUpTabledata} from './parseTableData'
+import { useSelector } from 'react-redux';
 
-
-function Table({ columns, data, props }) {
+function Table({ columns, data, props,syntaxError }) {
   const {
     getTableProps,
     getTableBodyProps,
@@ -24,8 +24,6 @@ function Table({ columns, data, props }) {
           <tr {...headerGroup.getHeaderGroupProps()}>
             {headerGroup.headers.map(column => {
               if(props.type=='tokenList' && props.tokenListData && column.Header==props.tokenListData[props.tokenIndex]){
-                console.log('here')
-                console.log(column)
                 return <th style={{background:'#80a879'}} {...column.getHeaderProps()}>{column.render('Header')}</th>
               }else{
                 return <th {...column.getHeaderProps()}>{column.render('Header')}</th>
@@ -41,7 +39,11 @@ function Table({ columns, data, props }) {
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => {
                 if((cell.column.Header==props.terminal && cell.row.values.terminal==props.nonTerminal) ){
-                  return <td style={{background:'#80a879'}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  if(syntaxError) {
+                    console.log(syntaxError)
+                    console.log(cell.column.Header)
+                  }
+                  return <td style={{background:`${ syntaxError && syntaxError.col==cell.column.Header && cell.row.values.terminal==syntaxError.row ? 'red': '#80a879'}`}} {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }else{
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 }
@@ -58,6 +60,7 @@ function Table({ columns, data, props }) {
 function ReactTable(props) {
     let data=[]
     let columns=[]
+    const syntaxError=useSelector(state=>state.errorIndex)
     if(props.data && props.columns ){
         data=props.data
         columns=props.columns
@@ -267,7 +270,7 @@ function ReactTable(props) {
 
   return (
     <Styles>
-      <Table columns={columns} data={data} props={props}/>
+      <Table columns={columns} data={data} props={props} syntaxError={syntaxError}/>
     </Styles>
   )
 }
