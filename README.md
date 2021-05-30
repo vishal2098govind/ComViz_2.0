@@ -6,7 +6,7 @@
 
 - Git clone this repo to your PC
   ```
-      $ git clone git@github.com:vishal2098govind/ComViz_2.0.git
+      $ git clone https://github.com/vishal2098govind/ComViz_2.0.git
   ```
 
 ## Running Backend Server
