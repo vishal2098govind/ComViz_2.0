@@ -86,7 +86,8 @@ function Intro(props) {
     try {
       let response = await Axios({
         method: "post",
-        url: "http://localhost:8000/submit_code",
+        url: "https://comviz.onrender.com/submit_code",
+        // url: "http://localhost:8000/submit_code",
         data: form,
       });
       if (response.data.status == "error") {
