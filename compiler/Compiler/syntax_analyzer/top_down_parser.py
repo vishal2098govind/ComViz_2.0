@@ -321,7 +321,7 @@ class Parser:
                 return parse_result
 
             else:
-                return parse_result.success(node=t1_node, parse_node='T1')
+                return parse_result.success(node=t1_node, parser_node='T1')
 
         # T1 -> e
         elif operator_token.type in (TT_PLUS, TT_MINUS, TT_EOF, TT_RPAREN, TT_LT, TT_GT, TT_LTE, TT_GTE, TT_NE, TT_EE) \
