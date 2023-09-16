@@ -4,5 +4,5 @@ Django==3.1.7
 pytz==2021.1
 six==1.15.0
 sqlparse==0.4.1
-
+corsheaders
 pandas~=1.2.3
