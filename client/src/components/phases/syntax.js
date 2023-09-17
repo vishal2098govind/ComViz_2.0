@@ -418,6 +418,23 @@ function Syntax(props) {
               >
                 Show Symbol Table
               </Button>
+              {parserType == "bottomUp" && (
+                <Button
+                  variant="contained"
+                  color="default"
+                  className={classes.button1}
+                >
+                  <a
+                    href={dfa}
+                    alt="Image description"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ textDecoration: "none", color: "white" }}
+                  >
+                    Show DFA
+                  </a>
+                </Button>
+              )}
             </div>
             <Grid container spacing={3}>
               <Grid item md={7.2}>
